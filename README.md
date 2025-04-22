@@ -13,10 +13,11 @@ VybGen prioritizes a seamless, intuitive user experience:
 
 /tokens - retrives list of token # https://docs.vybenetwork.com/reference/get_tokens_summary
 
-/s [mintAddress or ca] - search coin  # https://docs.vybenetwork.com/reference/get_token_details
+/s [mintAddress or ca] - search coin  # https://docs.vybenetwork.com/reference/get_token_details # add a whale button at the bottom of message to call /whale of that token, and another emoji for /tt also chart emoji for /c
 /tt [mintAddress or ca]- token's transfer # https://docs.vybenetwork.com/reference/get_token_transfers
 /ths [mintAddress or ca] - tokens token holders at selected interval for the specified token # https://docs.vybenetwork.com/reference/get_token_holders_time_series
 /whale [mintAddress or ca] - top token holders - #https://docs.vybenetwork.com/reference/get_top_holders
+/c [mintAddress or ca] - chart of token of last 1 day # https://docs.vybenetwork.com/reference/get_token_trade_ohlc and use chart.js   
 
 
 /help                  - Get assistance
@@ -38,7 +39,13 @@ VybGen prioritizes a seamless, intuitive user experience:
 
 #fun 
 /roast [walletaddress] #roast the wallet's trading history
+/crypotmotivation #something like trade more dont loose faith kinda vibe 
 
+
+# other api functions
+/markets #real-time status of major stock markets around the world.
+/cryptomarkets #real-status and price of crypto's in USD
+/cryptonews #get some lastes crypto news from X or somewhere 
 ```
 
 ### Interactive Features
