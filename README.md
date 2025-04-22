@@ -9,7 +9,7 @@ VybGen prioritizes a seamless, intuitive user experience:
 ```
 /tb [wallet] - token-balance  # https://docs.vybenetwork.com/reference/get_wallet_tokens
 /nb [wallet]- nft balance # https://docs.vybenetwork.com/reference/get_wallet_nfts
-/pnl [wallet]- wallet pnl # https://docs.vybenetwork.com/reference/get_wallet_pnl
+/pnl [wallet]- wallet pnl # https://docs.vybenetwork.com/reference/get_wallet_pnl improvse the PnL response by a banner of best/worst trade of last 7 days
 
 /tokens - retrives list of token # https://docs.vybenetwork.com/reference/get_tokens_summary
 
@@ -27,6 +27,18 @@ VybGen prioritizes a seamless, intuitive user experience:
 /program  - program lists # https://docs.vybenetwork.com/reference/get_known_program_accounts , # https://docs.vybenetwork.com/reference/ranking
 /program [adddress] / [name] # https://docs.vybenetwork.com/reference/get_program 
     # setupa an ai prompt to take the input name and filter out program address from the prompt
+
+# For group
+/gpnl [wallet's]- group member's wallet pnl # https://docs.vybenetwork.com/reference/get_wallet_pnl improvse the PnL response by a banner of best/worst trade of last 7 days
+                    # in groups the member's wallet can be take from db when they setup their portfolio . leaderboard can also be printed by this 
+
+# translate 
+/tldr [reply to a message] # give a summary of chats of last 24hrs 
+
+
+#fun 
+/roast [walletaddress] #roast the wallet's trading history
+
 ```
 
 ### Interactive Features
