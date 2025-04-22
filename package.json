@@ -1,0 +1,19 @@
+{
+  "name": "VybGen",
+  "version": "1.0.0",
+  "main": "app.ts",
+  "repository": "https://github.com/4rjunc/VybGen.git",
+  "author": "4rjunc <arjunmundamani@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "npx tsx app.ts"
+  },
+  "dependencies": {
+    "@api/vybe-api": "file:.api/apis/vybe-api",
+    "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "grammy": "^1.36.1",
+    "together-ai": "^0.15.0"
+  }
+}
