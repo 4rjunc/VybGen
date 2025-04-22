@@ -2,53 +2,31 @@
 
 VybGen is a powerful Telegram bot that delivers actionable, real-time on-chain analytics directly to crypto communities. Built on Vybe APIs, VybGen brings sophisticated blockchain monitoring capabilities to where degens already gather.
 
-![VybGen Logo](assets/vybgen-logo.png)
-
-## 🚀 Innovation & Originality
-
-VybGen leverages Vybe APIs in creative ways to bring unique insights to Telegram users:
-
-### 1. Smart Money Flow Detection
-- **What it does:** Identifies and alerts when labeled "smart money" wallets (VCs, founders, treasury) make significant moves
-- **How it works:** Combines `/account/known-accounts` with `/token/transfers` to detect patterns and create actionable signals
-- **Why it matters:** Get alerted before everyone else when sophisticated players make strategic moves
-
-### 2. Cross-DEX Arbitrage Finder
-- **What it does:** Identifies price discrepancies across multiple exchanges and liquidity pools
-- **How it works:** Uses `/price/{baseMintAddress}+{quoteMintAddress}/pair-ohlcv` across different program IDs to find tradable gaps
-- **Why it matters:** Profit from market inefficiencies before they're arbitraged away
-
-### 3. Protocol Health Radar
-- **What it does:** Creates a comprehensive health score for protocols based on multiple data points
-- **How it works:** Aggregates data from `/program/{programId}/active-users-ts`, `/program/{programId}/tvl`, and instruction count endpoints
-- **Why it matters:** Spot declining protocols before major issues arise or identify growing protocols early
-
-### 4. Whale Behavior Analysis
-- **What it does:** Goes beyond simple whale alerts by categorizing and analyzing patterns in large holder behavior
-- **How it works:** Combines `/token/{mintAddress}/top-holders` with `/token/transfers` to create behavior profiles
-- **Why it matters:** Understand if whales are accumulating, distributing, or repositioning
-
-### 5. Oracle-DEX Divergence Alerts
-- **What it does:** Identifies when on-chain trading prices significantly diverge from oracle prices
-- **How it works:** Compares `/price/{priceFeedId}/pyth-price` data with actual DEX pricing from `/price/{mintAddress}/token-ohlcv`
-- **Why it matters:** Spot market inefficiencies or potential oracle manipulation attempts
-
-## 💯 User Experience
-
 VybGen prioritizes a seamless, intuitive user experience:
 
 ### Command Structure
 
 ```
-/track [wallet]        - Track wallet activities
-/price [token]         - Get price data and charts
-/watch [token] [condition] [value] - Set price alerts
-/whale [token] [amount] - Track large transfers
-/health [protocol]     - Get protocol health metrics
-/arb                   - View current arbitrage opportunities
-/flow                  - See smart money movements
-/profile               - View your settings
+/tb [wallet] - token-balance  # https://docs.vybenetwork.com/reference/get_wallet_tokens
+/nb [wallet]- nft balance # https://docs.vybenetwork.com/reference/get_wallet_nfts
+/pnl [wallet]- wallet pnl # https://docs.vybenetwork.com/reference/get_wallet_pnl
+
+/tokens - retrives list of token # https://docs.vybenetwork.com/reference/get_tokens_summary
+
+/s [mintAddress or ca] - search coin  # https://docs.vybenetwork.com/reference/get_token_details
+/tt [mintAddress or ca]- token's transfer # https://docs.vybenetwork.com/reference/get_token_transfers
+/ths [mintAddress or ca] - tokens token holders at selected interval for the specified token # https://docs.vybenetwork.com/reference/get_token_holders_time_series
+/whale [mintAddress or ca] - top token holders - #https://docs.vybenetwork.com/reference/get_top_holders
+
+
 /help                  - Get assistance
+
+/protfolio [wallet_address]  [wallet_address] - this is setting up a portfolio -> store the tg username with wallet address -> when /portfolio isused without wallet adddress check this tg username has already stored the wallets if no ask to add else call the /nb /tb /pnl of all address and structure it  properly and display it
+
+
+/program  - program lists # https://docs.vybenetwork.com/reference/get_known_program_accounts , # https://docs.vybenetwork.com/reference/ranking
+/program [adddress] / [name] # https://docs.vybenetwork.com/reference/get_program 
+    # setupa an ai prompt to take the input name and filter out program address from the prompt
 ```
 
 ### Interactive Features
@@ -216,32 +194,6 @@ VybGen is designed for real-world deployment and scaling:
 - **Distributed Processing:** For handling high notification volumes
 - **Regional Deployment:** To minimize latency worldwide
 
-## 🛣️ Development Roadmap
-
-- **Phase 1** *(Weeks 1-2)*
-  - Core API integration
-  - Basic command structure
-  - Wallet tracking
-  - Price alerts
-
-- **Phase 2** *(Weeks 3-4)*
-  - Whale monitoring system
-  - Protocol health metrics
-  - Smart money tracking
-  - Enhanced visualizations
-
-- **Phase 3** *(Weeks 5-6)*
-  - Arbitrage detection
-  - Pattern recognition
-  - Machine learning for signal generation
-  - Community features
-
-- **Phase 4** *(Post-Hackathon)*
-  - Mobile companion app
-  - Custom notification systems
-  - Advanced analytics dashboard
-  - API for third-party extensions
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please check out our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
@@ -252,6 +204,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgements
 
-- Built for the Vybe Telegram Bot Challenge
-- Powered by [Vybe APIs](https://vybe.api-docs.io)
+- Powered by [Vybe APIs](https://docs.vybenetwork.com/docs/overview)
 - Special thanks to the Solana and Telegram developer communities
