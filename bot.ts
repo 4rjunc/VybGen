@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary } from "./apis/utils";
 
 // Initialize Supabase client
 //const supabaseUrl = process.env.SUPABASE_URL;
@@ -97,9 +97,23 @@ export function startBot() {
       // To repsone message part here
     },
 
-    async nb(ctx) {
-      console.log("nft-balance");
+    async nb(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_wallet_nfts
+      // Show typing indicator while processing
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please sent a wallet address");
+      }
+      const walletAddress: any = ctx.match // takes wallet address
+
+      console.log(`nft-balance | username: ${username}, address: ${walletAddress}`);
+
+      // use try-catch blocks (good practice usefull while judging)
+      getWalletNFTs(walletAddress)
+        .then(result => console.log(JSON.stringify(result, null, 2)))
+        .catch(err => console.error(err));
     },
 
     async pnl(ctx) {
@@ -107,9 +121,17 @@ export function startBot() {
       // https://docs.vybenetwork.com/reference/get_wallet_pnl
     },
 
-    async tokens(ctx) {
-      console.log("tokens");
+    async tokens(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_tokens_summary
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      const username = ctx.from.username;
+      console.log(`token list | username: ${username}`);
+
+      // use try-catch blocks (good practice usefull while judging)
+      getTokensSummary()
+        .then(result => console.log(JSON.stringify(result, null, 2)))
+        .catch(err => console.error(err));
+
     },
 
     async s(ctx) {
