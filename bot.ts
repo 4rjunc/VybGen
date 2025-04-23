@@ -1,7 +1,7 @@
-import { Bot, GrammyError, HttpError } from "grammy";
+import { Bot, GrammyError, HttpError, Context } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-
+import { getWalletTokens } from "./apis/utils";
 
 // Initialize Supabase client
 //const supabaseUrl = process.env.SUPABASE_URL;
@@ -25,9 +25,76 @@ export function startBot() {
     },
 
     // New commands
-    async tb(ctx) {
-      console.log("token-balance");
+    async tb(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_wallet_tokens
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please sent a wallet address");
+      }
+      const walletAddress: any = ctx.match // takes wallet address
+
+      console.log(`token-balance | username: ${username}, address: ${walletAddress}`);
+      try {
+        // Show typing indicator while processing
+        await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+
+        // Get wallet data
+        const walletData = await getWalletTokens(walletAddress);
+
+        // Format the total value with commas and 2 decimal places
+        const formattedTotal = new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(parseFloat(walletData.totalValueUsd));
+
+        // Generate emoji based on portfolio value
+        let emoji = "🚀"; // Default
+        if (parseFloat(walletData.totalValueUsd) > 100000) {
+          emoji = "💎🙌";
+        } else if (parseFloat(walletData.totalValueUsd) > 10000) {
+          emoji = "🔥";
+        }
+
+        // Create message header
+        let message = `${emoji} *WALLET REPORT* ${emoji}\n\n`;
+        message += `💰 *Total Value:* $${formattedTotal}\n`;
+        message += `🔢 *Token Count:* ${walletData.tokenCount}\n\n`;
+
+        // Sort tokens by value (highest first)
+        const sortedTokens = [...walletData.tokens].sort((a, b) =>
+          parseFloat(b.valueUsd) - parseFloat(a.valueUsd)
+        );
+
+        // Add token details
+        message += "*Token Breakdown:*\n";
+        sortedTokens.forEach((token, index) => {
+          // Format the USD value
+          const valueFormatted = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(parseFloat(token.valueUsd));
+
+          // Add token emojis based on type
+          let tokenEmoji = "🪙";
+          if (token.symbol === "SOL") tokenEmoji = "⚡";
+          if (token.symbol === "USDC" || token.symbol === "USDT") tokenEmoji = "💵";
+          if (token.valueUsd > 10000) tokenEmoji = "🌕"; // Moon emoji for high value tokens
+
+          message += `${tokenEmoji} *${token.symbol}* - $${valueFormatted}\n`;
+        });
+
+        // Add footer with wallet address preview
+        const shortAddress = `${walletAddress}`;
+        message += `\n🔍 Address: \`${shortAddress}\``;
+
+        // Send the message with Markdown formatting
+        await ctx.reply(message, { parse_mode: "Markdown" });
+
+      } catch (error) {
+        console.error('Failed to send wallet report:', error);
+        await ctx.reply("⚠️ Failed to fetch wallet data. Please check the address and try again.");
+      }
+      // To repsone message part here
     },
 
     async nb(ctx) {

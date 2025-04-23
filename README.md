@@ -6,8 +6,10 @@ VybGen prioritizes a seamless, intuitive user experience:
 
 ### Command Structure
 
+refer to this tg bot's js library : https://grammy.dev/
+
 ```
-/tb [wallet] - token-balance  # https://docs.vybenetwork.com/reference/get_wallet_tokens
+/tb [wallet] - token-balance  # https://docs.vybenetwork.com/reference/get_wallet_tokens  # use this address CLabpywE6YA8diKM73C23TTJs95FPmHgM7o35iPFbgJs
 /nb [wallet]- nft balance # https://docs.vybenetwork.com/reference/get_wallet_nfts
 /pnl [wallet]- wallet pnl # https://docs.vybenetwork.com/reference/get_wallet_pnl improvse the PnL response by a banner of best/worst trade of last 7 days
 
