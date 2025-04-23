@@ -267,3 +267,38 @@ export async function getTokenDetails(mintAddress) {
     throw error;
   }
 }
+
+/**
+ * Retrieves token transfer details for a specified mint address
+ * @param {string} mintAddress - The mint address to query
+ * @returns {Promise<Object>} - Object containing token transfer details
+ */
+export async function getTokenTransfers(mintAddress: string) {
+  try {
+    // Fetch token transfer data
+    const response = await vybeApi.get_token_transfers({ mintAddress });
+
+    // Ensure response.data.transfers is an array
+    if (!Array.isArray(response.data.transfers)) {
+      throw new Error('Unexpected response format: transfers is not an array');
+    }
+
+    // Extract and format the data as needed
+    const transfers = response.data.transfers.map(transfer => ({
+      signature: transfer.signature,
+      from: transfer.senderAddress,
+      to: transfer.receiverAddress,
+      amount: transfer.calculatedAmount,
+      timestamp: new Date(transfer.blockTime * 1000).toISOString(),
+      valueUsd: transfer.valueUsd
+    }));
+
+    return {
+      count: transfers.length,
+      transfers: transfers
+    };
+  } catch (error) {
+    console.error('Error fetching token transfers:', error);
+    throw error;
+  }
+}

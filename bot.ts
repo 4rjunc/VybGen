@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTokenTransfers } from "./apis/utils";
 
 // Initialize Supabase client
 //const supabaseUrl = process.env.SUPABASE_URL;
@@ -167,10 +167,54 @@ export function startBot() {
 
     },
 
-    async tt(ctx) {
-      console.log("token-transfers");
-      // https://docs.vybenetwork.com/reference/get_token_transfers
-    },
+
+async tt(ctx: Context) {
+  // https://docs.vybenetwork.com/reference/get_token_transfers
+  await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+
+  const username = ctx.from.username;
+  if (!ctx.match) {
+    return ctx.reply("Please send a mint address");
+  }
+  const mintAddress: any = ctx.match; // takes mint address
+
+  console.log(`token-transfers | username: ${username}, mint address: ${mintAddress}`);
+
+  try {
+    // Fetch token transfer data
+    const transferData = await getTokenTransfers(mintAddress);
+
+    // Create message header
+    let message = `🔄 *Token Transfers for ${mintAddress}*\n\n`;
+    message += `📊 *Total Transfers:* ${transferData.count}\n\n`;
+
+    // Add transfer details, limit to first 10 transfers
+    transferData.transfers.slice(0, 10).forEach((transfer, index) => {
+      message += `*Transfer ${index + 1}:*
+`;
+      message += `Signature: ${transfer.signature}
+`;
+      message += `From: ${transfer.from}
+`;
+      message += `To: ${transfer.to}
+`;
+      message += `Amount: ${transfer.amount}
+`;
+      message += `Value (USD): $${transfer.valueUsd}
+`;
+      message += `Timestamp: ${transfer.timestamp}
+
+`;
+    });
+
+    // Send the message with Markdown formatting
+    await ctx.reply(message, { parse_mode: "Markdown" });
+
+  } catch (error) {
+    console.error('Failed to send token transfer data:', error);
+    await ctx.reply("⚠️ Failed to fetch token transfer data. Please check the mint address and try again.");
+  }
+},
 
     async ths(ctx) {
       console.log("token-holders-series");
