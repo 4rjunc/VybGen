@@ -1,1 +1,269 @@
 import vybeApi from '@api/vybe-api';
+
+const vybe_token = process.env.VYBE_TOKEN;
+vybeApi.auth(vybe_token);
+
+/**
+ * Retrieves token information for a specified wallet address
+ * @param {string} ownerAddress - The wallet address to query
+ * @returns {Promise<Object>} - Object containing total value and token details
+ */
+export async function getWalletTokens(ownerAddress: string) {
+  try {
+    // Fetch wallet data
+    const response = await vybeApi.get_wallet_tokens({ ownerAddress });
+
+    // Extract only necessary data
+    const { totalTokenValueUsd, data } = response.data;
+
+    // Map tokens to simplified format
+    const tokens = data.map(token => ({
+      name: token.name,
+      symbol: token.symbol,
+      valueUsd: token.valueUsd
+    }));
+
+    // Return formatted response
+    return {
+      totalValueUsd: totalTokenValueUsd,
+      tokenCount: tokens.length,
+      tokens
+    };
+  } catch (error) {
+    console.error('Error fetching wallet tokens:', error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves NFT collection information for a specified wallet address
+ * @param {string} ownerAddress - The wallet address to query
+ * @returns {Promise<Object>} - Object containing total values and NFT collection details
+ */
+export async function getWalletNFTs(ownerAddress) {
+  try {
+    // Fetch wallet NFT data
+    const response = await vybeApi.get_wallet_nfts({ ownerAddress });
+
+    // Extract main data points
+    const {
+      totalSol,
+      totalUsd,
+      totalNftCollectionCount,
+      data
+    } = response.data;
+
+    // Map collections to a cleaner format
+    const collections = data.map(collection => {
+      return {
+        name: collection.name,
+        collectionAddress: collection.collectionAddress,
+        itemCount: collection.totalItems,
+        valueSol: parseFloat(collection.valueSol),
+        priceSol: parseFloat(collection.priceSol),
+        valueUsd: parseFloat(collection.valueUsd),
+        priceUsd: parseFloat(collection.priceUsd),
+        imageUrl: collection.logoUrl
+      };
+    });
+
+    // Sort collections by USD value (highest first)
+    const sortedCollections = collections.sort((a, b) => b.valueUsd - a.valueUsd);
+
+    // Calculate total item count across all collections
+    const totalNftCount = collections.reduce((sum, collection) => sum + collection.itemCount, 0);
+
+    // Return formatted response
+    return {
+      summary: {
+        totalValueSol: parseFloat(totalSol),
+        totalValueUsd: parseFloat(totalUsd),
+        collectionCount: totalNftCollectionCount,
+        totalNftCount: totalNftCount
+      },
+      collections: sortedCollections
+    };
+  } catch (error) {
+    console.error('Error fetching wallet NFTs:', error);
+    throw error;
+  }
+}
+
+
+/**
+ * Get latest token data summary
+ * @returns {Promise<Object>} - Object containing tokens details
+*/
+export async function getTokensSummary(limit = 10) {
+  try {
+
+    // Fetch token summary data
+    const response = await vybeApi.get_tokens_summary({ limit });
+
+    // Map tokens to a cleaner format
+    const tokens = response.data.data.map(token => {
+      return {
+        symbol: token.symbol,
+        name: token.name,
+        mintAddress: token.mintAddress,
+        // Format price values to 6 decimal places and convert to numbers
+        price: Number(token.price.toFixed(6)),
+        price1d: Number(token.price1d.toFixed(6)),
+        price7d: Number(token.price7d.toFixed(6)),
+        decimal: token.decimal,
+        logoUrl: token.logoUrl,
+        category: token.category || 'Uncategorized',
+        subcategory: token.subcategory || 'Uncategorized',
+        verified: token.verified,
+        updateTime: new Date(token.updateTime * 1000).toISOString(),
+        // Format large numbers for readability
+        currentSupply: Number(token.currentSupply.toFixed(2)).toLocaleString(),
+        marketCap: Number(token.marketCap.toFixed(2)).toLocaleString(),
+        // Handle null values for volume
+        tokenAmountVolume24h: token.tokenAmountVolume24h ?
+          Number(token.tokenAmountVolume24h.toFixed(2)).toLocaleString() : 0,
+        usdValueVolume24h: token.usdValueVolume24h ?
+          Number(token.usdValueVolume24h.toFixed(2)).toLocaleString() : 0
+      };
+    });
+
+    return {
+      count: tokens.length,
+      tokens: tokens
+    };
+  } catch (error) {
+    console.error('Error fetching token summary:', error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves PnL for a specified wallet address
+ * @param {string} ownerAddress - The wallet address to query
+ * @returns {Promise<Object>} - Object containing total values for PnL details
+ */
+export async function getWalletPnL(ownerAddress, resolution = '7d', token = null) {
+  try {
+
+    // Fetch wallet PnL data
+    const response = await vybeApi.get_wallet_pnl({
+      resolution: resolution,
+      ownerAddress: ownerAddress
+    });
+
+    const data = response.data;
+
+    // Format the summary data
+    const summary = {
+      winRate: Number(data.summary.winRate.toFixed(2)),
+      realizedPnlUsd: Number(data.summary.realizedPnlUsd.toFixed(2)),
+      unrealizedPnlUsd: Number(data.summary.unrealizedPnlUsd.toFixed(2)),
+      totalPnlUsd: Number((data.summary.realizedPnlUsd + data.summary.unrealizedPnlUsd).toFixed(2)),
+      uniqueTokensTraded: data.summary.uniqueTokensTraded,
+      averageTradeUsd: Number(data.summary.averageTradeUsd.toFixed(2)),
+      tradesCount: data.summary.tradesCount,
+      winningTradesCount: data.summary.winningTradesCount,
+      losingTradesCount: data.summary.losingTradesCount,
+      tradesVolumeUsd: Number(data.summary.tradesVolumeUsd.toFixed(2)),
+      bestPerformingToken: {
+        symbol: data.summary.bestPerformingToken.tokenSymbol,
+        address: data.summary.bestPerformingToken.tokenAddress,
+        name: data.summary.bestPerformingToken.tokenName,
+        logoUrl: data.summary.bestPerformingToken.tokenLogoUrl,
+        pnlUsd: Number(data.summary.bestPerformingToken.pnlUsd.toFixed(2))
+      },
+      worstPerformingToken: {
+        symbol: data.summary.worstPerformingToken.tokenSymbol,
+        address: data.summary.worstPerformingToken.tokenAddress,
+        name: data.summary.worstPerformingToken.tokenName,
+        logoUrl: data.summary.worstPerformingToken.tokenLogoUrl,
+        pnlUsd: Number(data.summary.worstPerformingToken.pnlUsd.toFixed(2))
+      },
+      // Format the trend data
+      pnlTrend: data.summary.pnlTrendSevenDays.map(day => {
+        return {
+          date: new Date(day[0]).toISOString().split('T')[0],
+          pnlUsd: Number(day[1].toFixed(2))
+        };
+      })
+    };
+
+    // Format token metrics
+    const tokenMetrics = data.tokenMetrics.map(token => {
+      return {
+        address: token.tokenAddress,
+        symbol: token.tokenSymbol,
+        realizedPnlUsd: Number(token.realizedPnlUsd.toFixed(2)),
+        unrealizedPnlUsd: Number(token.unrealizedPnlUsd.toFixed(2)),
+        totalPnlUsd: Number((token.realizedPnlUsd + token.unrealizedPnlUsd).toFixed(2)),
+        buys: {
+          volumeUsd: Number(token.buys.volumeUsd.toFixed(2)),
+          tokenAmount: Number(token.buys.tokenAmount.toFixed(2)),
+          transactionCount: token.buys.transactionCount
+        },
+        sells: {
+          volumeUsd: Number(token.sells.volumeUsd.toFixed(2)),
+          tokenAmount: Number(token.sells.tokenAmount.toFixed(2)),
+          transactionCount: token.sells.transactionCount
+        }
+      };
+    });
+
+    // Sort tokens by total PnL (highest first)
+    const sortedTokenMetrics = tokenMetrics.sort((a, b) => b.totalPnlUsd - a.totalPnlUsd);
+
+    return {
+      summary: summary,
+      tokenMetrics: sortedTokenMetrics
+    };
+  } catch (error) {
+    console.error('Error fetching wallet PnL:', error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves PnL for a specified wallet address
+ * @param {string} ownerAddress - The wallet address to query
+ * @returns {Promise<Object>} - Object containing token details
+ */
+export async function getTokenDetails(mintAddress) {
+  try {
+    // Fetch token details
+    const response = await vybeApi.get_token_details({ mintAddress });
+
+    const tokenData = response.data;
+
+    // Format the token details
+    return {
+      symbol: tokenData.symbol,
+      name: tokenData.name,
+      mintAddress: tokenData.mintAddress,
+      // Format prices to more readable values (6 decimal places max)
+      price: Number(tokenData.price.toFixed(6)),
+      price1d: Number(tokenData.price1d.toFixed(6)),
+      price7d: Number(tokenData.price7d.toFixed(6)),
+      priceChange24h: Number(((tokenData.price / tokenData.price1d - 1) * 100).toFixed(2)),
+      priceChange7d: Number(((tokenData.price / tokenData.price7d - 1) * 100).toFixed(2)),
+      decimal: tokenData.decimal,
+      logoUrl: tokenData.logoUrl,
+      category: tokenData.category || 'Uncategorized',
+      subcategory: tokenData.subcategory || 'Uncategorized',
+      verified: tokenData.verified,
+      updateTime: new Date(tokenData.updateTime * 1000).toISOString(),
+      // Format large numbers for readability
+      currentSupply: Number(tokenData.currentSupply.toFixed(2)).toLocaleString(),
+      marketCap: Number(tokenData.marketCap.toFixed(2)).toLocaleString(),
+      // Handle volume data
+      volume24h: {
+        tokenAmount: tokenData.tokenAmountVolume24h ?
+          Number(tokenData.tokenAmountVolume24h.toFixed(2)).toLocaleString() : 0,
+        usdValue: tokenData.usdValueVolume24h ?
+          Number(tokenData.usdValueVolume24h.toFixed(2)).toLocaleString() : 0
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching token details:', error);
+    throw error;
+  }
+}
