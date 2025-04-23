@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails } from "./apis/utils";
 
 // Initialize Supabase client
 //const supabaseUrl = process.env.SUPABASE_URL;
@@ -116,9 +116,23 @@ export function startBot() {
         .catch(err => console.error(err));
     },
 
-    async pnl(ctx) {
-      console.log("wallet-pnl");
+    async pnl(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_wallet_pnl
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please sent a wallet address");
+      }
+      const walletAddress: any = ctx.match // takes wallet address
+
+      console.log(`PnL | username: ${username}, address: ${walletAddress}`);
+
+      // use try-catch blocks (good practice usefull while judging)
+      getWalletPnL(walletAddress)
+        .then(result => console.log(JSON.stringify(result, null, 2)))
+        .catch(err => console.error(err));
+
+
     },
 
     async tokens(ctx: Context) {
@@ -134,9 +148,23 @@ export function startBot() {
 
     },
 
-    async s(ctx) {
-      console.log("search-coin");
+    async s(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_token_details
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please sent a CA or Mint Address");
+      }
+      const mintAddress: any = ctx.match // takes wallet address
+
+      console.log(`token search | username: ${username}, mint address: ${mintAddress}`);
+
+      // use try-catch blocks (good practice usefull while judging)
+      getTokenDetails(mintAddress)
+        .then(result => console.log(JSON.stringify(result, null, 2)))
+        .catch(err => console.error(err));
+
+
     },
 
     async tt(ctx) {

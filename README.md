@@ -9,13 +9,15 @@ VybGen prioritizes a seamless, intuitive user experience:
 refer to this tg bot's js library : https://grammy.dev/
 
 ```
-/tb [wallet] - token-balance  # https://docs.vybenetwork.com/reference/get_wallet_tokens  # use this address CLabpywE6YA8diKM73C23TTJs95FPmHgM7o35iPFbgJs
-/nb [wallet]- nft balance # https://docs.vybenetwork.com/reference/get_wallet_nfts
-/pnl [wallet]- wallet pnl # https://docs.vybenetwork.com/reference/get_wallet_pnl improvse the PnL response by a banner of best/worst trade of last 7 days
+APIDONE + TGMESSAGE  /tb [wallet] - token-balance  # https://docs.vybenetwork.com/reference/get_wallet_tokens  # use this address CLabpywE6YA8diKM73C23TTJs95FPmHgM7o35iPFbgJs
+APIDONE /nb [wallet]- nft balance # https://docs.vybenetwork.com/reference/get_wallet_nfts # use this address for 3bgWiS5HTvJ8xu8P7q7qLPztZgS6Df5UskCbjntKUS7P
+APIDONE /pnl [wallet]- wallet pnl # https://docs.vybenetwork.com/reference/get_wallet_pnl improvse the PnL response by a banner of best/worst trade of last 7 days
 
-/tokens - retrives list of token # https://docs.vybenetwork.com/reference/get_tokens_summary
+APIDONE /tokens - retrives list of token # https://docs.vybenetwork.com/reference/get_tokens_summary
 
-/s [mintAddress or ca] - search coin  # https://docs.vybenetwork.com/reference/get_token_details # add a whale button at the bottom of message to call /whale of that token, and another emoji for /tt also chart emoji for /c
+APIDONE /s [mintAddress or ca] - search coin  # https://docs.vybenetwork.com/reference/get_token_details # add a whale button at the bottom of message to call /whale of that token, and another emoji for /tt also chart emoji for /c 
+                        # use this contract address EExgnN63UsvaWqnrrP5epwD5y21qUmt9osgZVq98pump
+
 /tt [mintAddress or ca]- token's transfer # https://docs.vybenetwork.com/reference/get_token_transfers
 /ths [mintAddress or ca] - tokens token holders at selected interval for the specified token # https://docs.vybenetwork.com/reference/get_token_holders_time_series
 /whale [mintAddress or ca] - top token holders - #https://docs.vybenetwork.com/reference/get_top_holders
