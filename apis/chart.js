@@ -6,26 +6,6 @@ import * as d3 from 'd3';
 const ohlcvData = {
   "data": [
     {
-      "time": 1744070400,
-      "open": "0.006563761745284714",
-      "high": "0.007179296549942463",
-      "low": "0.006034867359092077",
-      "close": "0.006397232509705602",
-      "volume": "2943487.809030545016486165",
-      "volumeUsd": "18830.175903852317238480806311460655996330",
-      "count": 393
-    },
-    {
-      "time": 1744156800,
-      "open": "0.006408206977752359",
-      "high": "0.008227564292730650",
-      "low": "0.005978189683988801",
-      "close": "0.007792078495084052",
-      "volume": "4168165.846229587024669467",
-      "volumeUsd": "32478.675454349384563365277542409683040284",
-      "count": 398
-    },
-    {
       "time": 1744243200,
       "open": "0.007771675455097031",
       "high": "0.007771675455097031",
@@ -108,7 +88,7 @@ const ohlcvData = {
     {
       "time": 1744934400,
       "open": "0.016195467503605468",
-      "high": "0.016566948392151490",
+      "high": "529902.239944409213833162",
       "low": "0.013284660641172088",
       "close": "0.013473175750576328",
       "volume": "10040230.385495558974174874",
@@ -150,10 +130,30 @@ const ohlcvData = {
       "open": "0.013579502905806326",
       "high": "0.014996644425815484",
       "low": "0.013439730146110166",
-      "close": "0.014645091421084386",
-      "volume": "3965622.912549783033715544",
-      "volumeUsd": "58076.910095838503797577293179831143895984",
-      "count": 1110
+      "close": "0.014233697026436236",
+      "volume": "6036284.564678205071730257",
+      "volumeUsd": "85918.645658983116809862037202787002392652",
+      "count": 1691
+    },
+    {
+      "time": 1745366400,
+      "open": "0.014229397177905994",
+      "high": "0.018787421986522732",
+      "low": "0.014186964129892386",
+      "close": "0.015668210259132464",
+      "volume": "16020591.119509652866976466",
+      "volumeUsd": "251013.990136067589681944153550135864592224",
+      "count": 2666
+    },
+    {
+      "time": 1745452800,
+      "open": "0.015672730029610334",
+      "high": "0.017471249188647366",
+      "low": "0.014394603180055136",
+      "close": "0.017342958372697024",
+      "volume": "4942659.061133152975453454",
+      "volumeUsd": "85720.330347666027191824465365179356320896",
+      "count": 1286
     }
   ]
 };
@@ -170,8 +170,8 @@ const darkModeColors = {
 };
 
 // Format data for charting with proper date formatting
-const formatData = () => {
-  return ohlcvData.data.map(item => {
+const formatData = (response) => {
+  return response.map(item => {
     const date = new Date(item.time * 1000);
 
     // Format date as MM/DD/YY
@@ -195,7 +195,8 @@ const formatData = () => {
 };
 
 // Generate the chart image with dark mode
-const generateChartImage = () => {
+export async function generateChartImage(response) {
+  console.log("generateChartImage function")
   const width = 1200;
   const height = 800;
   const margin = { top: 60, right: 60, bottom: 80, left: 90 };
@@ -211,67 +212,54 @@ const generateChartImage = () => {
   ctx.fillRect(0, 0, width, height);
 
   // Format data
-  const data = formatData();
+  const data = formatData(response);
 
   // Set up scales
   const xScale = d3.scaleBand()
     .domain(data.map(d => d.date))
     .range([0, chartWidth])
-    .padding(0.2);
-
-  const minPrice = d3.min(data, d => d.low) || 0;
-  const maxPrice = d3.max(data, d => d.high) || 0;
-  const pricePadding = (maxPrice - minPrice) * 0.1; // Add 10% buffer
+    .padding(0.1);
 
   const yScale = d3.scaleLinear()
-    .domain([minPrice - pricePadding, maxPrice + pricePadding])
+    .domain([d3.min(data, d => d.low), d3.max(data, d => d.high)])
     .range([chartHeight, 0]);
 
-  // Draw grid lines
-  ctx.strokeStyle = darkModeColors.grid;
-  ctx.lineWidth = 0.5;
+  // Draw candlesticks
+  data.forEach((d, i) => {
+    const x = xScale(d.date);
+    const width = xScale.bandwidth();
 
-  // Horizontal grid lines
-  const yTicks = yScale.ticks(10);
-  yTicks.forEach(tick => {
+    // Draw body
+    ctx.fillStyle = d.close >= d.open ? darkModeColors.upCandle : darkModeColors.downCandle;
+    ctx.fillRect(
+      margin.left + x,
+      margin.top + yScale(Math.max(d.open, d.close)),
+      width,
+      Math.abs(yScale(d.close) - yScale(d.open))
+    );
+
+    // Draw wicks
+    ctx.strokeStyle = darkModeColors.wickColor;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(margin.left, margin.top + yScale(tick));
-    ctx.lineTo(width - margin.right, margin.top + yScale(tick));
+    ctx.moveTo(margin.left + x + width/2, margin.top + yScale(d.high));
+    ctx.lineTo(margin.left + x + width/2, margin.top + yScale(d.low));
     ctx.stroke();
   });
 
-  // Vertical grid lines
-  data.forEach((d, i) => {
-    if (i % 2 === 0) { // Draw every second line to avoid overcrowding
-      const x = margin.left + xScale(d.date) + xScale.bandwidth() / 2;
-      ctx.beginPath();
-      ctx.moveTo(x, margin.top);
-      ctx.lineTo(x, height - margin.bottom);
-      ctx.stroke();
-    }
-  });
-
-  // Draw axes
-  ctx.strokeStyle = darkModeColors.axis;
-  ctx.lineWidth = 1.5;
-
-  // X axis
-  ctx.beginPath();
-  ctx.moveTo(margin.left, height - margin.bottom);
-  ctx.lineTo(width - margin.right, height - margin.bottom);
-  ctx.stroke();
-
-  // Y axis
+  // Add axes
+  ctx.strokeStyle = darkModeColors.text;
+  ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(margin.left, margin.top);
   ctx.lineTo(margin.left, height - margin.bottom);
+  ctx.lineTo(width - margin.right, height - margin.bottom);
   ctx.stroke();
 
-  // X axis labels
+  // Add X-axis labels
   ctx.fillStyle = darkModeColors.text;
   ctx.font = '12px Arial';
   ctx.textAlign = 'center';
-
   data.forEach((d, i) => {
     if (i % 2 === 0 || i === data.length - 1) { // Show every second label to avoid overcrowding
       const x = margin.left + xScale(d.date) + xScale.bandwidth() / 2;
@@ -279,48 +267,22 @@ const generateChartImage = () => {
     }
   });
 
-  // Y axis labels
+  // Add Y-axis labels
   ctx.textAlign = 'right';
+  const yTicks = yScale.ticks(5);
   yTicks.forEach(tick => {
-    ctx.fillText('$' + tick.toFixed(5), margin.left - 10, margin.top + yScale(tick) + 4);
+    ctx.fillText('$' + tick.toFixed(6), margin.left - 10, margin.top + yScale(tick) + 4);
   });
 
-  // Draw candlesticks
-  data.forEach(d => {
-    const x = margin.left + xScale(d.date) + xScale.bandwidth() / 2;
-    const open = margin.top + yScale(d.open);
-    const close = margin.top + yScale(d.close);
-    const high = margin.top + yScale(d.high);
-    const low = margin.top + yScale(d.low);
-
-    // Draw the wick (the line connecting the highest and lowest prices)
-    ctx.strokeStyle = darkModeColors.wickColor;
-    ctx.beginPath();
-    ctx.moveTo(x, high);
-    ctx.lineTo(x, low);
-    ctx.stroke();
-
-    // Draw the body (the rectangular part between open and close)
-    const bodyWidth = xScale.bandwidth() * 0.8;
-    const bodyHeight = Math.abs(close - open);
-    const bodyX = x - bodyWidth / 2;
-    const bodyY = Math.min(open, close);
-
-    // Fill green if close > open (price up), red if close < open (price down)
-    ctx.fillStyle = d.close > d.open ? darkModeColors.upCandle : darkModeColors.downCandle;
-    ctx.fillRect(bodyX, bodyY, bodyWidth, bodyHeight);
-    ctx.strokeStyle = darkModeColors.wickColor;
-    ctx.strokeRect(bodyX, bodyY, bodyWidth, bodyHeight);
-  });
-
-  // Draw chart title
+  // Add chart title
   ctx.font = 'bold 24px Arial';
-  ctx.fillStyle = darkModeColors.text;
   ctx.textAlign = 'center';
   ctx.fillText('Token OHLCV Chart', width / 2, 30);
 
   // Add price range info
   ctx.font = '14px Arial';
+  const minPrice = d3.min(data, d => d.low);
+  const maxPrice = d3.max(data, d => d.high);
   ctx.fillText(`Price Range: $${minPrice.toFixed(6)} - $${maxPrice.toFixed(6)}`, width / 2, height - 20);
 
   // Add time period
@@ -353,14 +315,16 @@ const generateChartImage = () => {
   ctx.fillStyle = darkModeColors.text;
   ctx.fillText('Down Day (Close < Open)', legendX + 30, legendY + 30);
 
-  // Save image
-  const imageBuffer = canvas.toBuffer('image/png');
-  fs.writeFileSync('dark_mode_token_ohlcv_chart.png', imageBuffer);
-  console.log('Dark mode chart image saved as dark_mode_token_ohlcv_chart.png');
-};
+  // Save the image
+  const imagePath = `tmp/chart_${Date.now()}.png`;
+  const buffer = canvas.toBuffer('image/png');
+  fs.writeFileSync(imagePath, buffer);
+  
+  return imagePath;
+}
 
 // Execute the chart generation
-generateChartImage();
+//generateChartImage();
 
 // Export the function for potential reuse
-export { generateChartImage };
+// export { generateChartImage };

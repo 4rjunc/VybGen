@@ -1,7 +1,9 @@
-import { Bot, GrammyError, HttpError, Context } from "grammy";
+import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart } from "./apis/utils";
+import fs from "fs";
+import { InputFile } from "grammy";
 
 // Initialize Supabase client
 //const supabaseUrl = process.env.SUPABASE_URL;
@@ -163,8 +165,6 @@ export function startBot() {
       getTokenDetails(mintAddress)
         .then(result => console.log(JSON.stringify(result, null, 2)))
         .catch(err => console.error(err));
-
-
     },
 
     async tt(ctx) {
@@ -177,9 +177,45 @@ export function startBot() {
       // https://docs.vybenetwork.com/reference/get_token_holders_time_series
     },
 
-    async whale(ctx) {
-      console.log("top-token-holders");
+    async whale(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_top_holders
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please sent a CA or Mint Address");
+      }
+      const mintAddress: any = ctx.match // takes wallet address
+
+      console.log(`whale | username: ${username}, mint address: ${mintAddress}`);
+
+      // use try-catch blocks (good practice usefull while judging)
+      getTopTokenHolders(mintAddress)
+        .then(result => console.log(JSON.stringify(result, null, 2)))
+        .catch(err => console.error(err));
+    },
+
+    async c(ctx: Context) {
+      //https://docs.vybenetwork.com/reference/get_token_trade_ohlc
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please sent a CA or Mint Address");
+      }
+      const mintAddress: any = ctx.match // takes wallet address
+      console.log(`charts | username: ${username}, mint address: ${mintAddress}`);
+
+      try {
+        const imagePath = await getTokenChart(mintAddress);
+        await ctx.replyWithPhoto(new InputFile(imagePath), {
+          caption: `Chart for token: ${mintAddress}`
+        });
+        
+        // Clean up the temporary file
+        fs.unlinkSync(imagePath);
+      } catch (error) {
+        console.error('Error generating chart:', error);
+        await ctx.reply('Sorry, there was an error generating the chart. Please try again later.');
+      }
     },
 
     async help(ctx) {
@@ -208,6 +244,7 @@ export function startBot() {
     "🔍 Search Token": "s",
     "📊 Portfolio": "portfolio",
     "🐋 Whale Watch": "whale",
+    "📈 Charts ": "chart",
     "❓ Help": "help"
   };
 
@@ -250,6 +287,8 @@ export function startBot() {
       `/s [mintAddress/name] - Search tokens\n` +
       `/tt [mintAddress] - Token transfers\n` +
       `/whale [mintAddress] - Top holders\n\n` +
+      `/c [mintAddress] - Generate a Chart\n\n` +
+
 
       `*🧩 Program Analysis:*\n` +
       `/program - Discover programs\n` +
