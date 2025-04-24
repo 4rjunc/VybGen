@@ -18,11 +18,12 @@ APIDONE /tokens - retrives list of token # https://docs.vybenetwork.com/referenc
 APIDONE /s [mintAddress or ca] - search coin  # https://docs.vybenetwork.com/reference/get_token_details # add a whale button at the bottom of message to call /whale of that token, and another emoji for /tt also chart emoji for /c 
                         # use this contract address EExgnN63UsvaWqnrrP5epwD5y21qUmt9osgZVq98pump
 
-/tt [mintAddress or ca]- token's transfer # https://docs.vybenetwork.com/reference/get_token_transfers
-/ths [mintAddress or ca] - tokens token holders at selected interval for the specified token # https://docs.vybenetwork.com/reference/get_token_holders_time_series
-/whale [mintAddress or ca] - top token holders - #https://docs.vybenetwork.com/reference/get_top_holders
+APIDONE /whale [mintAddress or ca] - top token holders - #https://docs.vybenetwork.com/reference/get_top_holders #SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa
 /c [mintAddress or ca] - chart of token of last 1 day # https://docs.vybenetwork.com/reference/get_token_trade_ohlc and use chart.js   
 
+
+/tt [mintAddress or ca]- token's transfer # https://docs.vybenetwork.com/reference/get_token_transfers
+/ths [mintAddress or ca] - tokens token holders at selected interval for the specified token # https://docs.vybenetwork.com/reference/get_token_holders_time_series
 
 /help                  - Get assistance
 

@@ -267,3 +267,81 @@ export async function getTokenDetails(mintAddress) {
     throw error;
   }
 }
+
+
+/**
+ * Gets the top token holders for a specific token
+ * @param {string} mintAddress - The token's mint address
+ * @param {number} limit - Maximum number of holders to return
+ * @returns {Object} Formatted top holders data
+ */
+export async function getTopTokenHolders(mintAddress, limit = 10) {
+  try {
+
+    // Fetch top holders data
+    const response = await vybeApi.get_top_holders({
+      limit: limit,
+      mintAddress: mintAddress
+    });
+
+    // Calculate total balance and value of top holders
+    const totalHoldersBalance = response.data.data.reduce((sum, holder) =>
+      sum + parseFloat(holder.balance), 0);
+
+    const totalHoldersValue = response.data.data.reduce((sum, holder) =>
+      sum + parseFloat(holder.valueUsd), 0);
+
+    // Map holders to a cleaner format
+    const holders = response.data.data.map(holder => {
+      return {
+        rank: holder.rank,
+        address: holder.ownerAddress,
+        // Use holder name if available, otherwise use shortened address
+        name: holder.ownerName || `${holder.ownerAddress.substring(0, 4)}...${holder.ownerAddress.substring(holder.ownerAddress.length - 4)}`,
+        logoUrl: holder.ownerLogoUrl,
+        // Format token data
+        token: {
+          mint: holder.tokenMint,
+          symbol: holder.tokenSymbol,
+          logoUrl: holder.tokenLogoUrl
+        },
+        // Format numbers for readability
+        balance: {
+          raw: parseFloat(holder.balance),
+          formatted: Number(parseFloat(holder.balance).toFixed(2)).toLocaleString()
+        },
+        value: {
+          usd: parseFloat(holder.valueUsd),
+          formatted: `$${Number(parseFloat(holder.valueUsd).toFixed(2)).toLocaleString()}`
+        },
+        // Format percentage with 2 decimal places
+        percentageOfSupply: Number(holder.percentageOfSupplyHeld.toFixed(2)),
+        // Calculate percentage of top holders total
+        percentageOfTopHolders: Number(((parseFloat(holder.balance) / totalHoldersBalance) * 100).toFixed(2))
+      };
+    });
+
+    return {
+      tokenMint: mintAddress,
+      tokenSymbol: holders[0]?.token.symbol || '',
+      totalHolders: limit,
+      summary: {
+        totalBalance: {
+          raw: totalHoldersBalance,
+          formatted: Number(totalHoldersBalance.toFixed(2)).toLocaleString()
+        },
+        totalValue: {
+          usd: totalHoldersValue,
+          formatted: `$${Number(totalHoldersValue.toFixed(2)).toLocaleString()}`
+        },
+        // Calculate percentage of supply held by top holders
+        percentageOfSupplyHeld: Number((holders.reduce((sum, holder) =>
+          sum + holder.percentageOfSupply, 0)).toFixed(2))
+      },
+      holders: holders
+    };
+  } catch (error) {
+    console.error('Error fetching top token holders:', error);
+    throw error;
+  }
+}

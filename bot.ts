@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders } from "./apis/utils";
 
 // Initialize Supabase client
 //const supabaseUrl = process.env.SUPABASE_URL;
@@ -177,9 +177,23 @@ export function startBot() {
       // https://docs.vybenetwork.com/reference/get_token_holders_time_series
     },
 
-    async whale(ctx) {
-      console.log("top-token-holders");
+    async whale(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_top_holders
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please sent a CA or Mint Address");
+      }
+      const mintAddress: any = ctx.match // takes wallet address
+
+      console.log(`whale | username: ${username}, mint address: ${mintAddress}`);
+
+      // use try-catch blocks (good practice usefull while judging)
+      getTopTokenHolders(mintAddress)
+        .then(result => console.log(JSON.stringify(result, null, 2)))
+        .catch(err => console.error(err));
+
+
     },
 
     async help(ctx) {
