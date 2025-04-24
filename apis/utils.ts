@@ -1,4 +1,5 @@
 import vybeApi from '@api/vybe-api';
+import { generateChartImage } from "./chart"
 
 const vybe_token = process.env.VYBE_TOKEN;
 vybeApi.auth(vybe_token);
@@ -340,6 +341,28 @@ export async function getTopTokenHolders(mintAddress, limit = 10) {
       },
       holders: holders
     };
+  } catch (error) {
+    console.error('Error fetching top token holders:', error);
+    throw error;
+  }
+}
+
+
+/**
+ * Gets the token's OHLC for a specific token
+ * @param {string} mintAddress - The token's mint address
+ * @param {number} resolution - Resolution of the data
+ */
+export async function getTokenChart(mintAddress, resolution: "1d" | "7d" | "30d" = '1d') {
+  try {
+    const response = await vybeApi.get_token_trade_ohlc({
+      resolution: resolution,
+      mintAddress: mintAddress
+    })
+
+    console.log("generateChartImage call:", response.data)
+    const imagePath = await generateChartImage(response.data.data)
+    return imagePath
   } catch (error) {
     console.error('Error fetching top token holders:', error);
     throw error;
