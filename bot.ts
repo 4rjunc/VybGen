@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts } from "./apis/utils";
 import fs from "fs";
 import { InputFile } from "grammy";
 
@@ -311,11 +311,61 @@ export function startBot() {
       // If no, ask to add, else call /nb /tb /pnl of all addresses
     },
 
-    async program(ctx) {
+    async program(ctx: Context) {
       console.log("program");
-      // https://docs.vybenetwork.com/reference/get_known_program_accounts
-      // https://docs.vybenetwork.com/reference/ranking
-      // For specific address: https://docs.vybenetwork.com/reference/get_program
+      // Show typing indicator while processing
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+
+      try {
+        // Fetch known program accounts
+        const programData = await getKnownProgramAccounts();
+
+        // Check if a specific programId is provided
+        const programId = ctx.match ? ctx.match.trim() : null;
+
+        let message = "";
+
+        if (programId) {
+          // Find the program with the specified programId
+          const program = programData.programs.find(p => p.programId === programId);
+
+          if (program) {
+            // Display details for the specific program
+            message += `*Program Details:*
+`;
+            message += `Name: ${program.name}
+`;
+            message += `Entity: ${program.entityName}
+`;
+            message += `Labels: ${program.labels.join(", ")}
+`;
+            message += `Description: ${program.programDescription}
+`;
+            message += `Date Added: ${new Date(program.dateAdded).toISOString().split('T')[0]}
+`;
+          } else {
+            message = "⚠️ Program not found. Please check the program ID and try again.";
+          }
+        } else {
+          // Display the first 10 programs
+          message = `📚 *Known Program Accounts*\n\n`;
+          programData.programs.slice(0, 10).forEach((program, index) => {
+            message += `*Program ${index + 1}:*\n`;
+            message += `Name: ${program.name}\n`;
+            message += `Entity: ${program.entityName}\n`;
+            message += `Labels: ${program.labels.join(", ")}\n`;
+            message += `Description: ${program.programDescription}\n`;
+            message += `Date Added: ${new Date(program.dateAdded).toISOString().split('T')[0]}\n\n`;
+          });
+        }
+
+        // Send the message with Markdown formatting
+        await ctx.reply(message, { parse_mode: "Markdown" });
+
+      } catch (error) {
+        console.error('Failed to fetch known program accounts:', error);
+        await ctx.reply("⚠️ Failed to fetch known program accounts. Please try again later.");
+      }
     }
   };
 
