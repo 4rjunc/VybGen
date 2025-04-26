@@ -143,7 +143,7 @@ export async function getTokensSummary(limit = 10) {
  * @param {string} ownerAddress - The wallet address to query
  * @returns {Promise<Object>} - Object containing total values for PnL details
  */
-export async function getWalletPnL(ownerAddress, resolution = '7d', token = null) {
+export async function getWalletPnL(ownerAddress, resolution = '7d') {
   try {
 
     // Fetch wallet PnL data
@@ -442,3 +442,4 @@ export async function getKnownProgramAccounts() {
     throw error;
   }
 }
+

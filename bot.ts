@@ -2,6 +2,7 @@ import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy"
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
 import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts } from "./apis/utils";
+import { roastWalletPerformance } from "./apis/prompt";
 import fs from "fs";
 import { InputFile } from "grammy";
 
@@ -170,23 +171,23 @@ export function startBot() {
     async tt(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_token_transfers
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
-    
+
       const username = ctx.from.username;
       if (!ctx.match) {
         return ctx.reply("Please send a mint address");
       }
       const mintAddress: any = ctx.match; // takes mint address
-    
+
       console.log(`token-transfers | username: ${username}, mint address: ${mintAddress}`);
-    
+
       try {
         // Fetch token transfer data
         const transferData = await getTokenTransfers(mintAddress);
-    
+
         // Create message header
         let message = `🔄 *Token Transfers for ${mintAddress}*\n\n`;
         message += `📊 *Total Transfers:* ${transferData.count}\n\n`;
-    
+
         // Add transfer details, limit to first 10 transfers
         transferData.transfers.slice(0, 10).forEach((transfer, index) => {
           message += `*Transfer ${index + 1}:*
@@ -205,59 +206,59 @@ export function startBot() {
     
     `;
         });
-    
+
         // Send the message with Markdown formatting
         await ctx.reply(message, { parse_mode: "Markdown" });
-    
+
       } catch (error) {
         console.error('Failed to send token transfer data:', error);
         await ctx.reply("⚠️ Failed to fetch token transfer data. Please check the mint address and try again.");
       }
     },
-    
-        async ths(ctx: Context) {
-          // Show typing indicator while processing
-          await ctx.api.sendChatAction(ctx.chat!.id, "typing");
-    
-          const username = ctx.from.username;
-          if (!ctx.match) {
-            return ctx.reply("Please send a mint address");
-          }
-          const mintAddress: any = ctx.match; // takes mint address
-    
-          console.log(`token-holders-series | username: ${username}, mint address: ${mintAddress}`);
-    
-          try {
-            // Fetch token holders time series data
-            const timeSeriesData = await getTokenHoldersTimeSeries(mintAddress);
-    
-            // Create message header
-            let message = `📈 *Token Holders Time Series for ${mintAddress}*
-    
-    `;
-    
-            // Add time series details
-            timeSeriesData.slice(0, 10).forEach((entry, index) => {
-              const date = new Date(entry.holdersTimestamp * 1000).toISOString().split('T')[0];
-              message += `*Entry ${index + 1}:*
-    `;
-              message += `Date: ${date}
-    `;
-              message += `Holders: ${entry.nHolders}
+
+    async ths(ctx: Context) {
+      // Show typing indicator while processing
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please send a mint address");
+      }
+      const mintAddress: any = ctx.match; // takes mint address
+
+      console.log(`token-holders-series | username: ${username}, mint address: ${mintAddress}`);
+
+      try {
+        // Fetch token holders time series data
+        const timeSeriesData = await getTokenHoldersTimeSeries(mintAddress);
+
+        // Create message header
+        let message = `📈 *Token Holders Time Series for ${mintAddress}*
     
     `;
-            });
+
+        // Add time series details
+        timeSeriesData.slice(0, 10).forEach((entry, index) => {
+          const date = new Date(entry.holdersTimestamp * 1000).toISOString().split('T')[0];
+          message += `*Entry ${index + 1}:*
+    `;
+          message += `Date: ${date}
+    `;
+          message += `Holders: ${entry.nHolders}
     
-            // Send the message with Markdown formatting
-            await ctx.reply(message, { parse_mode: "Markdown" });
-    
-          } catch (error) {
-            console.error('Failed to send token holders time series data:', error);
-            await ctx.reply("⚠️ Failed to fetch token holders time series data. Please check the mint address and try again.");
-          }
-        },
-    
-    
+    `;
+        });
+
+        // Send the message with Markdown formatting
+        await ctx.reply(message, { parse_mode: "Markdown" });
+
+      } catch (error) {
+        console.error('Failed to send token holders time series data:', error);
+        await ctx.reply("⚠️ Failed to fetch token holders time series data. Please check the mint address and try again.");
+      }
+    },
+
+
 
     async whale(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_top_holders
@@ -291,12 +292,31 @@ export function startBot() {
         await ctx.replyWithPhoto(new InputFile(imagePath), {
           caption: `Chart for token: ${mintAddress}`
         });
-        
+
         // Clean up the temporary file
         fs.unlinkSync(imagePath);
       } catch (error) {
         console.error('Error generating chart:', error);
         await ctx.reply('Sorry, there was an error generating the chart. Please try again later.');
+      }
+    },
+
+    async roast(ctx: Context) {
+      //https://docs.vybenetwork.com/reference/get_token_trade_ohlc
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please sent a CA or Mint Address");
+      }
+      const mintAddress: any = ctx.match // takes wallet address
+      console.log(`roast | username: ${username}, mint address: ${mintAddress}`);
+
+      try {
+        const roast = await roastWalletPerformance(mintAddress);
+        await ctx.reply(roast)
+      } catch (error) {
+        console.error('Error while roasting:', error);
+        await ctx.reply('Sorry, there was an error while roasting. Please try again later.');
       }
     },
 
@@ -425,6 +445,11 @@ export function startBot() {
       `*🧩 Program Analysis:*\n` +
       `/program - Discover programs\n` +
       `/program [address/name] - Program details\n\n` +
+
+      `*💃 News, Fun and Others:*\n` +
+      `/roast [address] - Roast wallets based on PnL\n` +
+      `/markets - Get update on news\n\n` +
+      `/crypto - Get update on crypto news\n\n` +
 
       `Type /help for a complete list of commands and examples.`,
       {
