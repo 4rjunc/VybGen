@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers } from "./apis/utils";
 import fs from "fs";
 import { InputFile } from "grammy";
 
@@ -167,15 +167,97 @@ export function startBot() {
         .catch(err => console.error(err));
     },
 
-    async tt(ctx) {
-      console.log("token-transfers");
+    async tt(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_token_transfers
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+    
+      const username = ctx.from.username;
+      if (!ctx.match) {
+        return ctx.reply("Please send a mint address");
+      }
+      const mintAddress: any = ctx.match; // takes mint address
+    
+      console.log(`token-transfers | username: ${username}, mint address: ${mintAddress}`);
+    
+      try {
+        // Fetch token transfer data
+        const transferData = await getTokenTransfers(mintAddress);
+    
+        // Create message header
+        let message = `🔄 *Token Transfers for ${mintAddress}*\n\n`;
+        message += `📊 *Total Transfers:* ${transferData.count}\n\n`;
+    
+        // Add transfer details, limit to first 10 transfers
+        transferData.transfers.slice(0, 10).forEach((transfer, index) => {
+          message += `*Transfer ${index + 1}:*
+    `;
+          message += `Signature: ${transfer.signature}
+    `;
+          message += `From: ${transfer.from}
+    `;
+          message += `To: ${transfer.to}
+    `;
+          message += `Amount: ${transfer.amount}
+    `;
+          message += `Value (USD): $${transfer.valueUsd}
+    `;
+          message += `Timestamp: ${transfer.timestamp}
+    
+    `;
+        });
+    
+        // Send the message with Markdown formatting
+        await ctx.reply(message, { parse_mode: "Markdown" });
+    
+      } catch (error) {
+        console.error('Failed to send token transfer data:', error);
+        await ctx.reply("⚠️ Failed to fetch token transfer data. Please check the mint address and try again.");
+      }
     },
-
-    async ths(ctx) {
-      console.log("token-holders-series");
-      // https://docs.vybenetwork.com/reference/get_token_holders_time_series
-    },
+    
+        async ths(ctx: Context) {
+          // Show typing indicator while processing
+          await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+    
+          const username = ctx.from.username;
+          if (!ctx.match) {
+            return ctx.reply("Please send a mint address");
+          }
+          const mintAddress: any = ctx.match; // takes mint address
+    
+          console.log(`token-holders-series | username: ${username}, mint address: ${mintAddress}`);
+    
+          try {
+            // Fetch token holders time series data
+            const timeSeriesData = await getTokenHoldersTimeSeries(mintAddress);
+    
+            // Create message header
+            let message = `📈 *Token Holders Time Series for ${mintAddress}*
+    
+    `;
+    
+            // Add time series details
+            timeSeriesData.slice(0, 10).forEach((entry, index) => {
+              const date = new Date(entry.holdersTimestamp * 1000).toISOString().split('T')[0];
+              message += `*Entry ${index + 1}:*
+    `;
+              message += `Date: ${date}
+    `;
+              message += `Holders: ${entry.nHolders}
+    
+    `;
+            });
+    
+            // Send the message with Markdown formatting
+            await ctx.reply(message, { parse_mode: "Markdown" });
+    
+          } catch (error) {
+            console.error('Failed to send token holders time series data:', error);
+            await ctx.reply("⚠️ Failed to fetch token holders time series data. Please check the mint address and try again.");
+          }
+        },
+    
+    
 
     async whale(ctx: Context) {
       // https://docs.vybenetwork.com/reference/get_top_holders

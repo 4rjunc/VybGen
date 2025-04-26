@@ -228,6 +228,67 @@ export async function getWalletPnL(ownerAddress, resolution = '7d', token = null
  * @param {string} ownerAddress - The wallet address to query
  * @returns {Promise<Object>} - Object containing token details
  */
+export async function getTokenTransfers(mintAddress: string) {
+  try {
+    // Fetch token transfer data
+    const response = await vybeApi.get_token_transfers({ mintAddress });
+
+    // Ensure response.data.transfers is an array
+    if (!Array.isArray(response.data.transfers)) {
+      throw new Error('Unexpected response format: transfers is not an array');
+    }
+
+    // Extract and format the data as needed
+    const transfers = response.data.transfers.map(transfer => ({
+      signature: transfer.signature,
+      from: transfer.senderAddress,
+      to: transfer.receiverAddress,
+      amount: transfer.calculatedAmount,
+      timestamp: new Date(transfer.blockTime * 1000).toISOString(),
+      valueUsd: transfer.valueUsd
+    }));
+
+    return {
+      count: transfers.length,
+      transfers: transfers
+    };
+  } catch (error) {
+    console.error('Error fetching token transfers:', error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves token holders time series data for a specified mint address
+ * @param {string} mintAddress - The mint address to query
+ * @returns {Promise<Array>} - Array containing token holders time series data
+ */
+export async function getTokenHoldersTimeSeries(mintAddress: string) {
+  try {
+    // Fetch token holders time series data
+    const response = await vybeApi.get_token_holders_time_series({ interval: 'day', mintAddress });
+
+    // Check if response.data is an object with a 'data' property
+    const timeSeriesData = response.data.data;
+
+    if (!Array.isArray(timeSeriesData)) {
+      throw new Error('Unexpected response format: data is not an array');
+    }
+
+    // Return the data array
+    return timeSeriesData;
+  } catch (error) {
+    console.error('Error fetching token holders time series:', error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves top token holders for a specified mint address
+ * @param {string} mintAddress - The mint address to query
+ * @returns {Promise<Array>} - Array containing top token holders data
+ */
+
 export async function getTokenDetails(mintAddress) {
   try {
     // Fetch token details
