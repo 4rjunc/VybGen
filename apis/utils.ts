@@ -429,3 +429,16 @@ export async function getTokenChart(mintAddress, resolution: "1d" | "7d" | "30d"
     throw error;
   }
 }
+
+export async function getKnownProgramAccounts() {
+  try {
+    // Fetch known program accounts data
+    const response = await vybeApi.get_known_program_accounts();
+
+    // Return the data directly
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching known program accounts:', error);
+    throw error;
+  }
+}
