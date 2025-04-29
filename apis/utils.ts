@@ -3,6 +3,7 @@ import { generateChartImage } from "./chart"
 
 const vybe_token = process.env.VYBE_TOKEN;
 vybeApi.auth(vybe_token);
+const API_KEY = process.env.FINHUB_API_KEY; // Get API key from environment variables for security
 
 /**
  * Retrieves token information for a specified wallet address
@@ -452,7 +453,6 @@ interface NewsArticle {
 export async function getCryptoMarketNews(category = "crypto", limit = 7) {
   try {
     // API configuration
-    const API_KEY = process.env.FINHUB_API_KEY; // Get API key from environment variables for security
     const baseUrl = `https://finnhub.io/api/v1/news?category=${category}&minId=10&token=${API_KEY}`; // Replace with actual news API URL
 
     // Make the API request
@@ -492,3 +492,358 @@ export async function getCryptoMarketNews(category = "crypto", limit = 7) {
     throw error;
   }
 }
+
+
+
+// Define types for the API response
+interface MarketStatusResponse {
+  exchange: string;
+  holiday: string | null;
+  isOpen: boolean;
+  session: string;
+  timezone: string;
+  t: number;
+}
+
+// Define country/exchange metadata for display
+interface ExchangeInfo {
+  code: string;
+  name: string;
+  flag: string;
+  displayName: string;
+  timezone: string;
+  region: string;
+  regionOrder: number;
+  mainExchange: boolean;
+}
+
+/**
+ * Check if current time in the given timezone is within trading hours based on the region
+ * and it's a weekday (Monday-Friday)
+ * 
+ * @param timezone The timezone to check
+ * @param exchangeCode Optional exchange code for specific market hours
+ * @returns boolean indicating if current time is within trading hours
+ */
+function isWithinTradingHours(timezone: string, exchangeCode?: string): boolean {
+  try {
+    // Create formatter for getting hours and minutes in the target timezone
+    const timeFormatter = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+      timeZone: timezone
+    });
+
+    // Create formatter for getting day of week in the target timezone
+    const dayFormatter = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      timeZone: timezone
+    });
+
+    const now = new Date();
+    const localTime = timeFormatter.format(now);
+    const dayOfWeek = dayFormatter.format(now);
+
+    // Parse the time
+    const [hoursStr, minutesStr] = localTime.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+
+    // Convert to minutes since midnight
+    const currentTimeInMinutes = (hours * 60) + minutes;
+
+    // Check if it's a weekday
+    const isWeekday = !['Saturday', 'Sunday'].includes(dayOfWeek);
+
+    if (!isWeekday) {
+      return false; // Markets are closed on weekends
+    }
+
+    // Define trading hours based on timezone/region or specific exchange
+    let marketOpenTime = 9 * 60 + 30;  // Default: 9:30 AM
+    let marketCloseTime = 15 * 60 + 30; // Default: 3:30 PM
+
+    // Special cases for specific exchanges
+    if (exchangeCode) {
+      switch (exchangeCode) {
+        case 'US': // US markets: 9:30 AM - 4:00 PM
+          marketOpenTime = 9 * 60 + 30;  // 9:30 AM
+          marketCloseTime = 16 * 60;     // 4:00 PM
+          break;
+        case 'T': // Tokyo: 9:00 AM - 3:00 PM
+          marketOpenTime = 9 * 60;       // 9:00 AM
+          marketCloseTime = 15 * 60;     // 3:00 PM
+          break;
+        case 'HK': // Hong Kong: 9:30 AM - 4:00 PM
+        case 'SS': // Shanghai
+        case 'SZ': // Shenzhen
+          marketOpenTime = 9 * 60 + 30;  // 9:30 AM
+          marketCloseTime = 16 * 60;     // 4:00 PM
+          break;
+        case 'L': // London: 8:00 AM - 4:30 PM
+          marketOpenTime = 8 * 60;       // 8:00 AM
+          marketCloseTime = 16 * 60 + 30; // 4:30 PM
+          break;
+        // Add more specific exchange hours as needed
+      }
+    }
+    // If no specific exchange code or not in the list, use region-based hours
+    else if (timezone.includes('America')) {
+      marketOpenTime = 9 * 60 + 30;  // 9:30 AM
+      marketCloseTime = 16 * 60;     // 4:00 PM
+    }
+    else if (timezone.includes('Asia')) {
+      if (timezone.includes('Tokyo')) {
+        marketOpenTime = 9 * 60;     // 9:00 AM
+        marketCloseTime = 15 * 60;   // 3:00 PM
+      } else {
+        marketOpenTime = 9 * 60 + 30; // 9:30 AM
+        marketCloseTime = 16 * 60;    // 4:00 PM
+      }
+    }
+    else if (timezone.includes('Europe')) {
+      marketOpenTime = 8 * 60;       // 8:00 AM
+      marketCloseTime = 16 * 60 + 30; // 4:30 PM
+    }
+    else if (timezone.includes('Australia')) {
+      marketOpenTime = 10 * 60;      // 10:00 AM
+      marketCloseTime = 16 * 60;     // 4:00 PM
+    }
+
+    // Return true if time is between market hours
+    return currentTimeInMinutes >= marketOpenTime &&
+      currentTimeInMinutes <= marketCloseTime;
+  } catch (error) {
+    console.error("Error checking trading hours:", error);
+    return false; // Default to closed on error
+  }
+}
+
+/**
+ * Gets global market status for multiple exchanges and formats it for Telegram
+ * @returns {Promise<string>} Formatted market status message for Telegram
+ */
+export async function getGlobalMarketStatus() {
+  try {
+    // Define exchanges to check with their metadata
+    // Selected major exchanges from different regions
+    const exchanges: ExchangeInfo[] = [
+      // Americas
+      { code: 'US', name: 'US exchanges (NYSE, Nasdaq)', flag: '🇺🇸', displayName: 'UNITED STATES', timezone: 'America/New_York', region: 'AMERICAS', regionOrder: 1, mainExchange: true },
+      { code: 'TO', name: 'TORONTO STOCK EXCHANGE', flag: '🇨🇦', displayName: 'CANADA', timezone: 'America/Toronto', region: 'AMERICAS', regionOrder: 1, mainExchange: false },
+      // Asia-Pacific
+      { code: 'T', name: 'TOKYO STOCK EXCHANGE', flag: '🇯🇵', displayName: 'JAPAN', timezone: 'Asia/Tokyo', region: 'ASIA-PACIFIC', regionOrder: 2, mainExchange: true },
+      { code: 'SZ', name: 'SHENZHEN STOCK EXCHANGE', flag: '🇨🇳', displayName: 'CHINA (SZ)', timezone: 'Asia/Shanghai', region: 'ASIA-PACIFIC', regionOrder: 2, mainExchange: false },
+      { code: 'NS', name: 'NATIONAL STOCK EXCHANGE OF INDIA', flag: '🇮🇳', displayName: 'INDIA (NSE)', timezone: 'Asia/Kolkata', region: 'ASIA-PACIFIC', regionOrder: 2, mainExchange: true },
+      { code: 'SI', name: 'SINGAPORE EXCHANGE', flag: '🇸🇬', displayName: 'SINGAPORE', timezone: 'Asia/Singapore', region: 'ASIA-PACIFIC', regionOrder: 2, mainExchange: false },
+
+      // Europe
+      { code: 'L', name: 'LONDON STOCK EXCHANGE', flag: '🇬🇧', displayName: 'UK', timezone: 'Europe/London', region: 'EUROPE', regionOrder: 3, mainExchange: true },
+      { code: 'DE', name: 'XETRA', flag: '🇩🇪', displayName: 'GERMANY', timezone: 'Europe/Berlin', region: 'EUROPE', regionOrder: 3, mainExchange: true },
+      { code: 'SW', name: 'SWISS EXCHANGE', flag: '🇨🇭', displayName: 'SWITZERLAND', timezone: 'Europe/Zurich', region: 'EUROPE', regionOrder: 3, mainExchange: false },
+
+      // Middle East & Africa
+      { code: 'TA', name: 'TEL AVIV STOCK EXCHANGE', flag: '🇮🇱', displayName: 'ISRAEL', timezone: 'Asia/Jerusalem', region: 'MIDDLE EAST & AFRICA', regionOrder: 4, mainExchange: false },
+      { code: 'JO', name: 'JOHANNESBURG STOCK EXCHANGE', flag: '🇿🇦', displayName: 'SOUTH AFRICA', timezone: 'Africa/Johannesburg', region: 'MIDDLE EAST & AFRICA', regionOrder: 4, mainExchange: false },
+      { code: 'DB', name: 'DUBAI FINANCIAL MARKET', flag: '🇦🇪', displayName: 'UAE', timezone: 'Asia/Dubai', region: 'MIDDLE EAST & AFRICA', regionOrder: 4, mainExchange: false }
+    ];
+
+    // Fetch market status for all exchanges in parallel
+    const marketStatusPromises = exchanges.map(async (exchange) => {
+      const url = `https://finnhub.io/api/v1/stock/market-status?exchange=${exchange.code}&token=${API_KEY}`;
+
+      // Modified fetch function with the above trading hours check
+      try {
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok) {
+          //console.error(`Error fetching market status for ${exchange.code}: ${response.status}`);
+
+          // Check if the market should be open based on time when API fails
+          const isOpenByTime = isWithinTradingHours(exchange.timezone, exchange.code);
+
+          return {
+            exchange,
+            status: {
+              isOpen: isOpenByTime, // Set based on time check
+              session: isOpenByTime ? "open" : "closed",
+              holiday: null,
+              timezone: exchange.timezone,
+              t: Math.floor(Date.now() / 1000)
+            } as MarketStatusResponse
+          };
+        }
+        const status = await response.json() as MarketStatusResponse;
+        return { exchange, status };
+      } catch (error) {
+        //console.error(`Failed to fetch market status for ${exchange.code}:`, error);
+
+        // Check if the market should be open based on time when there's an error
+        const isOpenByTime = isWithinTradingHours(exchange.timezone, exchange.code);
+
+        return {
+          exchange,
+          status: {
+            isOpen: isOpenByTime, // Set based on time check
+            session: isOpenByTime ? "open" : "closed",
+            holiday: null,
+            timezone: exchange.timezone,
+            t: Math.floor(Date.now() / 1000)
+          } as MarketStatusResponse
+        };
+      }
+    });
+
+    // Wait for all requests to complete
+    const results = await Promise.all(marketStatusPromises);
+
+    // Group results by region
+    const regionMap = new Map<string, Array<{ exchange: ExchangeInfo, status: MarketStatusResponse }>>();
+
+    results.forEach((result) => {
+      const region = result.exchange.region;
+      if (!regionMap.has(region)) {
+        regionMap.set(region, []);
+      }
+      regionMap.get(region)?.push(result);
+    });
+
+    // Sort regions by order
+    const sortedRegions = Array.from(regionMap.entries()).sort((a, b) => {
+      const regionOrderA = a[1][0]?.exchange.regionOrder || 0;
+      const regionOrderB = b[1][0]?.exchange.regionOrder || 0;
+      return regionOrderA - regionOrderB;
+    });
+
+    // Current UTC time
+    const utcNow = new Date();
+    const utcTimeString = utcNow.toISOString().replace('T', ' ').substring(0, 16);
+
+    // Generate formatted message
+    let message = `🌐 GLOBAL MARKETS STATUS\n\n`;
+    message += `UTC Time: ${utcTimeString} AM\n\n`;
+
+    // Add regions and exchanges to the message
+    sortedRegions.forEach(([region, exchangeResults]) => {
+      // Add region header with proper emoji
+      let regionEmoji = '🌐';
+      if (region === 'AMERICAS') regionEmoji = '🌎';
+      else if (region === 'ASIA-PACIFIC') regionEmoji = '🌏';
+      else if (region === 'EUROPE') regionEmoji = '🇪🇺';
+      else if (region === 'MIDDLE EAST & AFRICA') regionEmoji = '🌍';
+
+      // Special formatting for US
+      const usResult = exchangeResults.find(r => r.exchange.code === 'US');
+      if (region === 'AMERICAS' && usResult) {
+        const localTime = getLocalTime(usResult.exchange.timezone);
+        const status = getStatusText(usResult.status);
+        const tomorrowStatus = predictTomorrowStatus(usResult.status);
+
+        message += `${usResult.exchange.flag} ${usResult.exchange.displayName}\n`;
+        message += ` ├ Exchanges: NYSE, NASDAQ\n`;
+        message += ` ├ Status: ${status}\n`;
+        message += ` ├ Local Time: ${localTime}\n`;
+        message += ` └ Tomorrow: ${tomorrowStatus}\n\n`;
+
+        // Filter out US from further processing
+        exchangeResults = exchangeResults.filter(r => r.exchange.code !== 'US');
+      }
+
+      // Only add region header if there are exchanges to show
+      if (exchangeResults.length > 0) {
+        message += `${regionEmoji} ${region}\n`;
+
+        // Sort exchanges by mainExchange flag (main exchanges first)
+        const sortedExchanges = exchangeResults.sort((a, b) => {
+          // First sort by mainExchange (true comes first)
+          if (a.exchange.mainExchange && !b.exchange.mainExchange) return -1;
+          if (!a.exchange.mainExchange && b.exchange.mainExchange) return 1;
+          // Then sort alphabetically by display name
+          return a.exchange.displayName.localeCompare(b.exchange.displayName);
+        });
+
+        // Add exchanges in this region
+        sortedExchanges.forEach((result) => {
+          const localTime = getLocalTime(result.exchange.timezone);
+          const status = getStatusText(result.status);
+          const holidayText = result.status.holiday ? ` (Holiday)` : '';
+
+          message += `${result.exchange.flag} ${result.exchange.displayName}: ${status}${holidayText} (Local: ${localTime})\n`;
+        });
+        message += '\n';
+      }
+    });
+
+    return message.trim();
+  } catch (error) {
+    console.error("Error generating global market status:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get formatted local time for a timezone
+ * @param timezone Timezone string
+ * @returns Formatted time string
+ */
+function getLocalTime(timezone: string): string {
+  const options: Intl.DateTimeFormatOptions = {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: timezone
+  };
+
+  return new Date().toLocaleString('en-US', options);
+}
+
+/**
+ * Get human-readable status text based on API response
+ * @param status Market status response
+ * @returns Formatted status text
+ */
+function getStatusText(status: MarketStatusResponse): string {
+  if (status.holiday) {
+    return 'Closed (Holiday)';
+  }
+
+  if (status.isOpen) {
+    return 'Open';
+  }
+
+  if (status.session === 'pre-market') {
+    return 'Closed (Pre-market)';
+  } else if (status.session === 'post-market' || status.session === 'after-hours') {
+    return 'Closed (After-hours)';
+  } else if (status.session === 'unknown') {
+    return 'Status Unknown';
+  }
+
+  return 'Closed';
+}
+
+/**
+ * Predict tomorrow's market status based on today's status and day of week
+ * @param status Current market status
+ * @returns Predicted status for tomorrow
+ */
+function predictTomorrowStatus(status: MarketStatusResponse): string {
+  const today = new Date();
+  const dayOfWeek = today.getUTCDay(); // 0 = Sunday, 6 = Saturday
+
+  // If today is Friday or Saturday, the market will be closed tomorrow
+  if (dayOfWeek === 5 || dayOfWeek === 6) {
+    return "Closed";
+  }
+
+  // If there's a holiday tomorrow, it would be closed
+  if (status.holiday) {
+    // This is a simple approximation - we should check if the holiday spans multiple days
+    return "Closed (Holiday)";
+  }
+
+  // Default assumption: markets open on weekdays
+  return "Open";
+}
+
+

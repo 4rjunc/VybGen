@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts, getCryptoMarketNews } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts, getCryptoMarketNews, getGlobalMarketStatus } from "./apis/utils";
 import { roastWalletPerformance } from "./apis/prompt";
 import fs from "fs";
 import { InputFile } from "grammy";
@@ -588,6 +588,21 @@ export function startBot() {
     async markets(ctx: Context) {
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
       try {
+        // Send "typing" action to indicate the bot is processing
+        await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+        const marketStatusMessage = await getGlobalMarketStatus();
+        // Send the formatted message to the Telegram chat
+        await ctx.reply(marketStatusMessage, { parse_mode: 'Markdown' });
+      } catch (error) {
+        console.error("Error handling markets command:", error);
+        await ctx.reply("Sorry, I couldn't retrieve market status information at this time.");
+      }
+
+    },
+
+    async news(ctx: Context) {
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      try {
         const generalNews = await getCryptoMarketNews("general", 7);
 
         // Create cyberpunk-themed message
@@ -610,10 +625,7 @@ export function startBot() {
         console.error('Error fetching market news:', error);
         await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch market news. Please try again later.", { parse_mode: "Markdown" });
       }
-    },
 
-    async crypto(ctx: Context) {
-      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
       try {
         const cryptoNews = await getCryptoMarketNews("crypto", 7);
 
@@ -659,7 +671,7 @@ export function startBot() {
         `*💃🏼 Fun, News*\n` +
         `/roast [address] - Roast addresses\n` +
         `/markets: View Global Market Status\n` +
-        `/crypto - Get update on crypto news/price\n` +
+        `/news - Get update on global market and crypto news\n` +
         `/motivate - Don't give up\n\n` +
 
         `*💡 Tips*\n` +
@@ -844,8 +856,8 @@ export function startBot() {
 
       `*💃 News, Fun and Others:*\n` +
       `/roast [address] - Roast wallets based on PnL\n` +
-      `/markets - Get update on news\n\n` +
-      `/crypto - Get update on crypto news/price\n` +
+      `/markets: View Global Market Status\n` +
+      `/news - Get update on global market and crypto news\n` +
       `/motivate - Don't give up\n\n` +
 
       `Type /help for a complete list of commands and examples.`
