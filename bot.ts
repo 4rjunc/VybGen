@@ -99,7 +99,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
 
       } catch (error) {
@@ -161,7 +162,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
 
       } catch (error) {
@@ -237,7 +239,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
 
       } catch (error) {
@@ -289,7 +292,10 @@ export function startBot() {
         message += `*💡 Use /s [token] to get detailed analysis*\n`;
         message += `*📈 Use /c [token] to view price charts*`;
 
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
       } catch (error) {
         console.error('Error fetching token data:', error);
         await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch token data. Please try again later.", { parse_mode: "Markdown" });
@@ -354,7 +360,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
       } catch (error) {
         console.error('Error fetching token details:', error);
@@ -394,7 +401,10 @@ export function startBot() {
         });
 
         // Send the message with Markdown formatting
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
 
       } catch (error) {
         console.error('Failed to send token transfer data:', error);
@@ -432,7 +442,10 @@ export function startBot() {
         });
 
         // Send the message with Markdown formatting
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
 
       } catch (error) {
         console.error('Failed to send token holders time series data:', error);
@@ -496,7 +509,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
       } catch (error) {
         console.error('Error fetching whale data:', error);
@@ -534,7 +548,8 @@ export function startBot() {
         await ctx.replyWithPhoto(new InputFile(imagePath), {
           caption: message,
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
 
         // Clean up the temporary file
@@ -575,7 +590,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "HTML",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
       } catch (error) {
         console.error('Error while roasting:', error);
@@ -590,7 +606,10 @@ export function startBot() {
         await ctx.api.sendChatAction(ctx.chat!.id, "typing");
         const marketStatusMessage = await getGlobalMarketStatus();
         // Send the formatted message to the Telegram chat
-        await ctx.reply(marketStatusMessage, { parse_mode: 'Markdown' });
+        await ctx.reply(marketStatusMessage, {
+          parse_mode: 'Markdown',
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
       } catch (error) {
         console.error("Error handling markets command:", error);
         await ctx.reply("Sorry, I couldn't retrieve market status information at this time.");
@@ -666,7 +685,10 @@ export function startBot() {
           }
         });
 
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
       } catch (error) {
         console.error('Error fetching news:', error);
         await ctx.reply("*ERROR*\nCould not retrieve market news. Try again later.", { parse_mode: "Markdown" });
@@ -684,15 +706,12 @@ export function startBot() {
         message += `*  \`${motivate}\` * \n`;
         await ctx.reply(message, {
           parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
-
-
       } catch (error) {
         console.error('Error while motivating:', error);
         await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to generate motivate. Please try again later.", { parse_mode: "Markdown" });
       }
-
-
     },
 
     async help(ctx) {
@@ -735,7 +754,10 @@ export function startBot() {
         `<b>🔋 Power Level: 100%</b>\n` +
         `<b>🌐 Network: Solana Mainnet</b>`;
 
-      await ctx.reply(message, { parse_mode: "HTML" });
+      await ctx.reply(message, {
+        parse_mode: "HTML",
+        reply_parameters: { message_id: ctx.msg.message_id },
+      });
     },
 
     async program(ctx: Context) {
@@ -781,7 +803,10 @@ export function startBot() {
         }
 
         // Send the message with Markdown formatting
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
 
       } catch (error) {
         console.error('Failed to fetch known program accounts:', error);
@@ -842,7 +867,10 @@ export function startBot() {
           }
 
           // Send the message with Markdown formatting
-          await ctx.reply(message, { parse_mode: "Markdown" });
+          await ctx.reply(message, {
+            parse_mode: "Markdown",
+            reply_parameters: { message_id: ctx.msg.message_id },
+          });
         } catch (portfolioError) {
           console.error('Error creating portfolio message:', portfolioError);
           await ctx.reply("⚠️ Failed to create your portfolio report. Please try again later.");
@@ -1005,38 +1033,30 @@ export function startBot() {
   // Add callback query handler for whale button
   bot.callbackQuery(/^whale_/, async (ctx) => {
     const mintAddress = ctx.callbackQuery.data.split('_')[1];
-    // Call the whale command handler directly
     await commandHandlers.whale(ctx, mintAddress);
   });
   bot.callbackQuery(/^c_/, async (ctx) => {
     const mintAddress = ctx.callbackQuery.data.split('_')[1];
-    // Call the whale command handler directly
     await commandHandlers.c(ctx, mintAddress);
   });
   bot.callbackQuery(/^s_/, async (ctx) => {
     const mintAddress = ctx.callbackQuery.data.split('_')[1];
-    // Call the whale command handler directly
     await commandHandlers.s(ctx, mintAddress);
   });
-
   bot.callbackQuery(/^tb_/, async (ctx) => {
     const walletAddress = ctx.callbackQuery.data.split('_')[1];
-    // Call the whale command handler directly
     await commandHandlers.tb(ctx, walletAddress);
   });
   bot.callbackQuery(/^nb_/, async (ctx) => {
     const walletAddress = ctx.callbackQuery.data.split('_')[1];
-    // Call the whale command handler directly
     await commandHandlers.nb(ctx, walletAddress);
   });
   bot.callbackQuery(/^pnl_/, async (ctx) => {
     const walletAddress = ctx.callbackQuery.data.split('_')[1];
-    // Call the whale command handler directly
     await commandHandlers.pnl(ctx, walletAddress);
   });
   bot.callbackQuery(/^roast_/, async (ctx) => {
     const walletAddress = ctx.callbackQuery.data.split('_')[1];
-    // Call the whale command handler directly
     await commandHandlers.roast(ctx, walletAddress);
   });
 
