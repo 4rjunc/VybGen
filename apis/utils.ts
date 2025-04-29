@@ -409,7 +409,7 @@ export async function getTopTokenHolders(mintAddress, limit = 10) {
  * @param {string} mintAddress - The token's mint address
  * @param {number} resolution - Resolution of the data
  */
-export async function getTokenChart(mintAddress, resolution: "1d" | "7d" | "30d" = '1d') {
+export async function getTokenChart(mintAddress, resolution: "1d" | "1w" | "1h" = '1d') {
   try {
     const response = await vybeApi.get_token_trade_ohlc({
       resolution: resolution,
@@ -454,19 +454,19 @@ export async function getCryptoMarketNews(category = "crypto", limit = 7) {
     // API configuration
     const API_KEY = process.env.FINHUB_API_KEY; // Get API key from environment variables for security
     const baseUrl = `https://finnhub.io/api/v1/news?category=${category}&minId=10&token=${API_KEY}`; // Replace with actual news API URL
-    
+
     // Make the API request
     const response = await fetch(baseUrl, {
       method: "GET",
     });
-    
+
     if (!response.ok) {
       throw new Error(`News API error: ${response.status} ${response.statusText}`);
     }
-    
+
     // Parse the response and assert type
     const newsData = await response.json() as NewsArticle[];
-    
+
     // Process and format the news data, limiting to 7 articles
     const formattedNews = newsData.slice(0, limit).map(article => ({
       id: article.id,
@@ -480,11 +480,11 @@ export async function getCryptoMarketNews(category = "crypto", limit = 7) {
       // Format datetime as readable string
       date: new Date(article.datetime * 1000).toLocaleString(),
       // Create a shorter summary for display purposes
-      shortSummary: article.summary?.length > 100 
-        ? `${article.summary.substring(0, 97)}...` 
+      shortSummary: article.summary?.length > 100
+        ? `${article.summary.substring(0, 97)}...`
         : article.summary
     }));
-    
+
     console.log(`Fetched ${formattedNews.length} ${category} news articles`);
     return formattedNews;
   } catch (error) {
