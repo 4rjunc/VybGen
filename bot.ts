@@ -550,38 +550,36 @@ export function startBot() {
       const username = ctx.from.username;
       // Use provided mintAddress or get from ctx.match
       const address = walletAddress || ctx.match;
+
       if (!address) {
-        return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
+        return ctx.reply("⚠️ <b>NEURAL NETWORK ERROR</b>\nPlease provide a wallet address to scan", { parse_mode: "HTML" });
       }
+
       console.log(`PnL | username: ${username}, address: ${address}`);
       console.log(`roast | username: ${username}, mint address: ${address}`);
 
       try {
         const roast = await roastWalletPerformance(address);
 
-        // Create cyberpunk-themed message
-        let message = `*🔥 WALLET ROAST ANALYSIS* 🔥\n\n`;
-        message += `*Target:* \`${address}\`\n`;
-        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${address})\n\n`;
-        message += `*💀 Brutal Analysis*\n`;
-        message += `${roast}\n\n`;
-        message += `*⚠️ Disclaimer: This is for entertainment purposes only*\n\n`;
+        let message = `🔥 <b>WALLET ROAST ANALYSIS</b> 🔥\n\n`;
+        message += `Target: <code>${address}</code>\n`;
+        message += `🔗 <a href="https://explorer.solana.com/address/${address}">View on Solana Explorer</a>\n\n`;
+        message += `💀 <b>Brutal Analysis</b>\n`;
+        message += `<tg-spoiler>${roast}</tg-spoiler>\n\n`;
+        message += `💡 <b>Quick Actions</b>`;
 
-        message += `*💡 Quick Actions*\n`;
         const keyboard = new InlineKeyboard()
           .text("💰 Balance", `tb_${address}`)
           .text("🎨 NFTs", `nb_${address}`)
-          .text("📊 PnL", `pnl_${address}`)
+          .text("📊 PnL", `pnl_${address}`);
 
         await ctx.reply(message, {
-          parse_mode: "Markdown",
+          parse_mode: "HTML",
           reply_markup: keyboard
         });
-
-
       } catch (error) {
         console.error('Error while roasting:', error);
-        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to generate roast. Please try again later.", { parse_mode: "Markdown" });
+        await ctx.reply("⚠️ <b>SYSTEM MALFUNCTION</b>\nFailed to generate roast. Please try again later.", { parse_mode: "HTML" });
       }
     },
 
