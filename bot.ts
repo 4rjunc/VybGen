@@ -1,8 +1,8 @@
 import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts,  getCryptoMarketNews } from "./apis/utils";
-import { roastWalletPerformance } from "./apis/prompt";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts, getCryptoMarketNews, getGlobalMarketStatus } from "./apis/utils";
+import { generateCryptoMotivation, roastWalletPerformance } from "./apis/prompt";
 import fs from "fs";
 import { InputFile } from "grammy";
 import { createClient } from '@supabase/supabase-js';
@@ -21,7 +21,7 @@ export function startBot() {
 
   // Define command handlers in one central object
   const commandHandlers = {
-    
+
     // New commands
     async tb(ctx: Context, walletAddress?: string) {
       // https://docs.vybenetwork.com/reference/get_wallet_tokens
@@ -31,7 +31,7 @@ export function startBot() {
       }
       // Use provided mintAddress or get from ctx.match
       const address = walletAddress || ctx.match;
-      
+
       if (!address) {
         return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
       }
@@ -97,7 +97,7 @@ export function startBot() {
           .text("📊 PnL", `pnl_${address}`)
           .text("💀 Roast", `roast_${address}`)
 
-        await ctx.reply(message, { 
+        await ctx.reply(message, {
           parse_mode: "Markdown",
           reply_markup: keyboard
         });
@@ -115,7 +115,7 @@ export function startBot() {
       const username = ctx.from.username;
       // Use provided mintAddress or get from ctx.match
       const address = walletAddress || ctx.match;
-      
+
       if (!address) {
         return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
       }
@@ -124,7 +124,7 @@ export function startBot() {
 
       try {
         const nftData = await getWalletNFTs(address);
-        
+
         // Format values
         const formatValue = (value: number) => {
           return new Intl.NumberFormat('en-US', {
@@ -159,7 +159,7 @@ export function startBot() {
           .text("📊 PnL", `pnl_${address}`)
           .text("💀 Roast", `roast_${address}`)
 
-        await ctx.reply(message, { 
+        await ctx.reply(message, {
           parse_mode: "Markdown",
           reply_markup: keyboard
         });
@@ -178,13 +178,13 @@ export function startBot() {
       // Use provided mintAddress or get from ctx.match
       const address = walletAddress || ctx.match;
       if (!address) {
-          return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
+        return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
       }
       console.log(`PnL | username: ${username}, address: ${address}`);
 
       try {
         const pnlData = await getWalletPnL(address);
-        
+
         // Format the PnL values
         const formatValue = (value: number) => {
           return new Intl.NumberFormat('en-US', {
@@ -235,7 +235,7 @@ export function startBot() {
           .text("🎨 NFTs", `nb_${address}`)
           .text("💀 Roast", `roast_${address}`)
 
-        await ctx.reply(message, { 
+        await ctx.reply(message, {
           parse_mode: "Markdown",
           reply_markup: keyboard
         });
@@ -254,7 +254,7 @@ export function startBot() {
 
       try {
         const tokenData = await getTokensSummary();
-        
+
         // Create cyberpunk-themed message
         let message = `*🌌 TOP TOKENS IN THE MATRIX 🌌*\n\n`;
         message += `*Total Tokens Tracked:* ${tokenData.count}\n\n`;
@@ -303,16 +303,16 @@ export function startBot() {
 
       // Use provided mintAddress or get from ctx.match
       const address = mintAddress || ctx.match;
-      
+
       if (!address) {
         return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a token address to scan", { parse_mode: "Markdown" });
       }
-      
+
       console.log(`token search | username: ${username}, mint address: ${address}`);
 
       try {
         const tokenData = await getTokenDetails(address);
-        
+
         // Format values
         const formatValue = (value: number) => {
           return new Intl.NumberFormat('en-US', {
@@ -352,7 +352,7 @@ export function startBot() {
           .text("🐋 Check Whales", `whale_${mintAddress}`)
           .text("📊 Chart", `c_${mintAddress}`);
 
-        await ctx.reply(message, { 
+        await ctx.reply(message, {
           parse_mode: "Markdown",
           reply_markup: keyboard
         });
@@ -445,10 +445,10 @@ export function startBot() {
       // https://docs.vybenetwork.com/reference/get_top_holders
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
       const username = ctx.from.username;
-      
+
       // Use provided mintAddress or get from ctx.match
       const address = mintAddress || ctx.match;
-      
+
       if (!address) {
         return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a token address to scan", { parse_mode: "Markdown" });
       }
@@ -457,7 +457,7 @@ export function startBot() {
 
       try {
         const whaleData = await getTopTokenHolders(address);
-        
+
         // Format values
         const formatValue = (value: number) => {
           return new Intl.NumberFormat('en-US', {
@@ -494,7 +494,7 @@ export function startBot() {
           .text("🪙 Token Info", `s_${mintAddress}`)
           .text("📊 Chart", `c_${mintAddress}`);
 
-        await ctx.reply(message, { 
+        await ctx.reply(message, {
           parse_mode: "Markdown",
           reply_markup: keyboard
         });
@@ -514,23 +514,23 @@ export function startBot() {
       // Use provided mintAddress or get from ctx.match
       const address = mintAddress || ctx.match;
       if (!address) {
-          return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a token address to scan", { parse_mode: "Markdown" });
+        return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a token address to scan", { parse_mode: "Markdown" });
       }
-      console.log(`charts | username: ${username}, mint address: ${mintAddress}`);
+      console.log(`charts | username: ${username}, mint address: ${address}`);
 
       try {
-        const imagePath = await getTokenChart(mintAddress);
+        const imagePath = await getTokenChart(address);
 
-        let message = `📍 Mint: \`${mintAddress}\`\n`;
-        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${mintAddress})\n`;
+        let message = `📍 Mint: \`${address}\`\n`;
+        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${address})\n`;
         message += `*💡 Quick Actions*\n`;
 
         // Create inline keyboard with whale button
         const keyboard = new InlineKeyboard()
-          .text("🪙 Token Info", `s_${mintAddress}`)
-          .text("🐋 Check Whales", `whale_${mintAddress}`);
+          .text("🪙 Token Info", `s_${address}`)
+          .text("🐋 Check Whales", `whale_${address}`);
 
-        
+
         await ctx.replyWithPhoto(new InputFile(imagePath), {
           caption: message,
           parse_mode: "Markdown",
@@ -551,14 +551,14 @@ export function startBot() {
       // Use provided mintAddress or get from ctx.match
       const address = walletAddress || ctx.match;
       if (!address) {
-          return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
+        return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
       }
       console.log(`PnL | username: ${username}, address: ${address}`);
       console.log(`roast | username: ${username}, mint address: ${address}`);
 
       try {
         const roast = await roastWalletPerformance(address);
-        
+
         // Create cyberpunk-themed message
         let message = `*🔥 WALLET ROAST ANALYSIS* 🔥\n\n`;
         message += `*Target:* \`${address}\`\n`;
@@ -573,12 +573,12 @@ export function startBot() {
           .text("🎨 NFTs", `nb_${address}`)
           .text("📊 PnL", `pnl_${address}`)
 
-        await ctx.reply(message, { 
+        await ctx.reply(message, {
           parse_mode: "Markdown",
           reply_markup: keyboard
         });
 
-        
+
       } catch (error) {
         console.error('Error while roasting:', error);
         await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to generate roast. Please try again later.", { parse_mode: "Markdown" });
@@ -588,55 +588,113 @@ export function startBot() {
     async markets(ctx: Context) {
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
       try {
-        const generalNews = await getCryptoMarketNews("general", 7);
-        
-        // Create cyberpunk-themed message
-        let message = `*📰 MARKET PULSE SCAN* 📰\n\n`;
-        message += `*🌐 Global Market Updates*\n\n`;
+        // Send "typing" action to indicate the bot is processing
+        await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+        const marketStatusMessage = await getGlobalMarketStatus();
+        // Send the formatted message to the Telegram chat
+        await ctx.reply(marketStatusMessage, { parse_mode: 'Markdown' });
+      } catch (error) {
+        console.error("Error handling markets command:", error);
+        await ctx.reply("Sorry, I couldn't retrieve market status information at this time.");
+      }
+
+    },
+
+    async news(ctx: Context) {
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      /**
+       * Format date string to a cleaner format
+       * @param dateStr Original date string
+       * @returns Formatted date string
+       */
+      function formatDate(dateStr: string): string {
+        try {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {
+          return dateStr; // Return original if parsing fails
+        }
+      }
+      try {
+        // Fetch both news types simultaneously
+        const [generalNews, cryptoNews] = await Promise.all([
+          getCryptoMarketNews("general", 3), // Reduced to 3 for better readability
+          getCryptoMarketNews("crypto", 3)   // Reduced to 3 for better readability
+        ]);
+
+        // Create minimalist but structured message
+        let message = `*📊 MARKET NEWS*\n\n`;
+
+        // General Market News Section
+        message += `*GLOBAL MARKETS*\n`;
 
         generalNews.forEach((article, index) => {
-          message += `*${index + 1}. ${article.headline}*\n`;
-          message += `📅 ${article.date}\n`;
-          message += `📝 ${article.shortSummary}\n`;
-          message += `🔗 [Read More](${article.url})\n`;
-          message += `📌 Source: ${article.source}\n\n`;
+          const isLast = index === generalNews.length - 1;
+          const prefix = isLast ? '└' : '├';
+
+          message += `${prefix} *${article.headline}*\n`;
+          if (!isLast) {
+            message += ` ├ ${formatDate(article.date)}\n`;
+            message += ` ├ ${article.shortSummary}\n`;
+            message += ` └ [Source: ${article.source}](${article.url})\n\n`;
+          } else {
+            message += ` ├ ${formatDate(article.date)}\n`;
+            message += ` ├ ${article.shortSummary}\n`;
+            message += ` └ [Source: ${article.source}](${article.url})\n\n`;
+          }
         });
 
-        message += `*💡 Stay informed with the latest market movements*\n`;
-        message += `Use /crypto for crypto-specific news`;
+        // Crypto News Section
+        message += `*CRYPTO MARKETS*\n`;
+
+        cryptoNews.forEach((article, index) => {
+          const isLast = index === cryptoNews.length - 1;
+          const prefix = isLast ? '└' : '├';
+
+          message += `${prefix} *${article.headline}*\n`;
+          if (!isLast) {
+            message += ` ├ ${formatDate(article.date)}\n`;
+            message += ` ├ ${article.shortSummary}\n`;
+            message += ` └ [Source: ${article.source}](${article.url})\n\n`;
+          } else {
+            message += ` ├ ${formatDate(article.date)}\n`;
+            message += ` ├ ${article.shortSummary}\n`;
+            message += ` └ [Source: ${article.source}](${article.url})\n\n`;
+          }
+        });
 
         await ctx.reply(message, { parse_mode: "Markdown" });
       } catch (error) {
-        console.error('Error fetching market news:', error);
-        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch market news. Please try again later.", { parse_mode: "Markdown" });
+        console.error('Error fetching news:', error);
+        await ctx.reply("*ERROR*\nCould not retrieve market news. Try again later.", { parse_mode: "Markdown" });
       }
     },
 
-    async crypto(ctx: Context) {
+    async motivate(ctx: Context) {
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
-      try {
-        const cryptoNews = await getCryptoMarketNews("crypto", 7);
-        
-        // Create cyberpunk-themed message
-        let message = `*🚀 CRYPTO NEWS MATRIX* 🚀\n\n`;
-        message += `*💎 Latest Crypto Updates*\n\n`;
 
-        cryptoNews.forEach((article, index) => {
-          message += `*${index + 1}. ${article.headline}*\n`;
-          message += `📅 ${article.date}\n`;
-          message += `📝 ${article.shortSummary}\n`;
-          message += `🔗 [Read More](${article.url})\n`;
-          message += `📌 Source: ${article.source}\n\n`;
+      try {
+        const motivate = await generateCryptoMotivation();
+
+        // Create cyberpunk-themed message
+        let message = `*🔥  MOTIVATION* 🔥\n\n`;
+        message += `*  \`${motivate}\` * \n`;
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
         });
 
-        message += `*💡 Stay ahead of the crypto curve*\n`;
-        message += `Use /markets for general market news`;
 
-        await ctx.reply(message, { parse_mode: "Markdown" });
       } catch (error) {
-        console.error('Error fetching crypto news:', error);
-        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch crypto news. Please try again later.", { parse_mode: "Markdown" });
+        console.error('Error while motivating:', error);
+        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to generate motivate. Please try again later.", { parse_mode: "Markdown" });
       }
+
+
     },
 
     async help(ctx) {
@@ -646,12 +704,12 @@ export function startBot() {
         `/nb [address] - NFT collection analysis\n` +
         `/pnl [address] - Profit & loss metrics\n` +
         `/portfolio - Manage your digital assets\n\n` +
-        
+
         `*🔍 Token Research*\n` +
         `/s [mint] - Token deep dive\n` +
         `/whale [mint] - Top holders analysis\n` +
         `/c [mint] - Price chart visualization\n\n` +
-        
+
         `*🧩 Program Analysis*\n` +
         `/program - Discover programs\n` +
         `/program [address] - Program details\n\n` +
@@ -659,14 +717,14 @@ export function startBot() {
         `*💃🏼 Fun, News*\n` +
         `/roast [address] - Roast addresses\n` +
         `/markets: View Global Market Status\n` +
-        `/crypto - Get update on crypto news/price\n` +
+        `/news - Get update on global market and crypto news\n` +
         `/motivate - Don't give up\n\n` +
-        
+
         `*💡 Tips*\n` +
         `• Use /s to search for tokens\n` +
         `• Use /c to view price charts\n` +
         `• Use /whale to track big players\n\n` +
-        
+
         `*⚠️ System Status: ONLINE*\n` +
         `*🔋 Power Level: 100%*\n` +
         `*🌐 Network: Solana Mainnet*`;
@@ -759,7 +817,7 @@ export function startBot() {
           for (const { wallet_address } of wallets) {
             try {
               message += `*Wallet Address:* \`${wallet_address}\`\n`;
-              
+
               // Fetch and display Net Balance
               const nftData = await getWalletNFTs(wallet_address);
               message += `Net Balance: $${nftData.summary.totalValueUsd}\n`;
@@ -844,8 +902,8 @@ export function startBot() {
 
       `*💃 News, Fun and Others:*\n` +
       `/roast [address] - Roast wallets based on PnL\n` +
-      `/markets - Get update on news\n\n` +
-      `/crypto - Get update on crypto news/price\n` +
+      `/markets: View Global Market Status\n` +
+      `/news - Get update on global market and crypto news\n` +
       `/motivate - Don't give up\n\n` +
 
       `Type /help for a complete list of commands and examples.`
@@ -868,7 +926,7 @@ export function startBot() {
   bot.callbackQuery("add_wallet", async (ctx) => {
     await ctx.answerCallbackQuery(); // Acknowledge the callback
     await ctx.reply("Please enter your wallet address.");
-    
+
     // Add the user to the set of users awaiting a wallet address
     awaitingWalletAddress.add(ctx.from.id);
   });
@@ -898,9 +956,9 @@ export function startBot() {
         // Insert the new wallet address into Supabase
         const { error } = await supabase
           .from('user_wallets')
-          .insert([{ 
-            username: ctx.from.username, 
-            wallet_address: newWalletAddress 
+          .insert([{
+            username: ctx.from.username,
+            wallet_address: newWalletAddress
           }]);
 
         if (error) {

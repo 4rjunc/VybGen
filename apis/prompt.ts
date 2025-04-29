@@ -62,3 +62,49 @@ export async function roastWalletPerformance(walletAddress, resolution = '7d') {
     throw error;
   }
 }
+
+/**
+ * Generates motivational messages for cryptocurrency traders
+ * @returns {Promise<string>} - A motivational message for crypto traders
+ */
+export async function generateCryptoMotivation() {
+  try {
+    // Create the prompt for the LLM
+    const motivationPrompt = `
+      Generate 3-5 lines of motivational text for a cryptocurrency trader that:
+      - Encourages resilience in the volatile crypto market
+      - Offers wisdom about long-term thinking
+      - Includes a touch of humor or a memorable phrase
+      - Avoids generic platitudes and feels specific to crypto trading
+      
+      The message should feel inspiring but realistic, acknowledging both the challenges and opportunities in cryptocurrency.
+    `;
+
+    // Generate the motivational message
+    const motivation = await together.chat.completions.create({
+      model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are an experienced crypto trader who has seen many market cycles. You provide authentic, thoughtful motivation to fellow traders - mixing encouragement with practical wisdom. Your advice acknowledges the reality of market volatility while maintaining an optimistic long-term outlook."
+        },
+        {
+          role: "user",
+          content: motivationPrompt
+        }
+      ],
+      max_tokens: 200
+    });
+
+    if (motivation?.choices?.[0]?.message?.content) {
+      const motivationalContent = motivation.choices[0].message.content.trim();
+      console.log("Generated crypto motivation");
+      return motivationalContent;
+    } else {
+      throw new Error("Failed to generate motivational message");
+    }
+  } catch (error) {
+    console.error("Error generating crypto motivation:", error);
+    throw error;
+  }
+}
