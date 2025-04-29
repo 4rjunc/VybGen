@@ -698,37 +698,37 @@ export function startBot() {
     },
 
     async help(ctx) {
-      const message = `*🌌 VYBGEN COMMAND MATRIX 🌌*\n\n` +
-        `*💰 Wallet Analysis*\n` +
-        `<blockquote style="background-color: #1a1a2e; color: #e94560; padding: 10px; border-radius: 5px;">` +
+      const message = `🌌 <b>VYBGEN COMMAND MATRIX </b> 🌌\n\n` +
+        `💰 <b>Wallet Analysis</b>\n` +
+        `<blockquote expandable>` +
         `/tb [address] - Token balance scan\n` +
         `/nb [address] - NFT collection analysis\n` +
         `/pnl [address] - Profit & loss metrics\n` +
         `/portfolio - Manage your digital assets\n` +
         `</blockquote>\n\n` +
 
-        `*🔍 Token Research*\n` +
-        `<blockquote style="background-color: #16213e; color: #0f3460; padding: 10px; border-radius: 5px;">` +
+        `🔍 <b>Token Research</b>\n` +
+        `<blockquote expandable>` +
         `/s [mint] - Token deep dive\n` +
         `/whale [mint] - Top holders analysis\n` +
         `/c [mint] - Price chart visualization\n` +
         `</blockquote>\n\n` +
 
-        `*🧩 Program Analysis*\n` +
-        `<blockquote style="background-color: #0f3460; color: #e94560; padding: 10px; border-radius: 5px;">` +
+        `🧩 <b>Program Analysis</b>\n` +
+        `<blockquote expandable>` +
         `/program - Discover programs\n` +
         `/program [address] - Program details\n` +
         `</blockquote>\n\n` +
 
-        `*💃🏼 Fun & News*\n` +
-        `<blockquote style="background-color: #e94560; color: #16213e; padding: 10px; border-radius: 5px;">` +
+        `💃🏼 <b>Fun & News</b>\n` +
+        `<blockquote expandable>` +
         `/roast [address] - Roast addresses\n` +
         `/markets - View Global Market Status\n` +
         `/news - Get update on global market and crypto news\n` +
         `/motivate - Don't give up\n` +
         `</blockquote>\n\n` +
 
-        `*💡 Tips*\n` +
+        `💡 <b>Tips</b>\n` +
         `<i>• Use /s to search for tokens\n` +
         `• Use /c to view price charts\n` +
         `• Use /whale to track big players</i>\n\n` +
@@ -888,48 +888,48 @@ export function startBot() {
 
   bot.command("start", async (ctx) => {
     const userName = ctx.from?.first_name || "there";
+
     const message = `🚀 Welcome to VybGen, ${userName}!\n\n` +
-    `I'm your personal Solana blockchain assistant. Here are the main commands you can use:\n\n` +
-        `💰 Wallet Analysis*\n` +
-        `<blockquote style="background-color: #1a1a2e; color: #e94560; padding: 10px; border-radius: 5px;">` +
-        `/tb [address] - Token balance scan\n` +
-        `/nb [address] - NFT collection analysis\n` +
-        `/pnl [address] - Profit & loss metrics\n` +
-        `/portfolio - Manage your digital assets\n` +
-        `</blockquote>\n\n` +
+      `I'm your personal Solana blockchain assistant. Here are the main commands you can use:\n\n` +
+      `💰 <b>Wallet Analysis</b>\n` +
+      `<blockquote expandable>` +
+      `/tb [address] - Token balance scan\n` +
+      `/nb [address] - NFT collection analysis\n` +
+      `/pnl [address] - Profit & loss metrics\n` +
+      `/portfolio - Manage your digital assets\n` +
+      `</blockquote>\n\n` +
 
-        `🔍 Token Research\n` +
-        `<blockquote style="background-color: #16213e; color: #0f3460; padding: 10px; border-radius: 5px;">` +
-        `/s [mint] - Token deep dive\n` +
-        `/whale [mint] - Top holders analysis\n` +
-        `/c [mint] - Price chart visualization\n` +
-        `</blockquote>\n\n` +
+      `🔍 <b>Token Research</b>\n` +
+      `<blockquote expandable>` +
+      `/s [mint] - Token deep dive\n` +
+      `/whale [mint] - Top holders analysis\n` +
+      `/c [mint] - Price chart visualization\n` +
+      `</blockquote>\n\n` +
 
-        `🧩 Program Analysis\n` +
-        `<blockquote style="backgroundColor: #0f3460; color: #e94560; padding: 10px; border-radius: 5px;">` +
-        `/program - Discover programs\n` +
-        `/program [address] - Program details\n` +
-        `</blockquote>\n\n` +
+      `🧩 <b>Program Analysis</b>\n` +
+      `<blockquote expandable>` +
+      `/program - Discover programs\n` +
+      `/program [address] - Program details\n` +
+      `</blockquote>\n\n` +
 
-        `💃🏼 Fun & News\n` +
-        `<blockquote style="background-color: #e94560; color: #16213e; padding: 10px; border-radius: 5px;">` +
-        `/roast [address] - Roast addresses\n` +
-        `/markets - View Global Market Status\n` +
-        `/news - Get update on global market and crypto news\n` +
-        `/motivate - Don't give up\n` +
-        `</blockquote>\n\n` +
+      `💃🏼 <b>Fun & News</b>\n` +
+      `<blockquote expandable>` +
+      `/roast [address] - Roast addresses\n` +
+      `/markets - View Global Market Status\n` +
+      `/news - Get update on global market and crypto news\n` +
+      `/motivate - Don't give up\n` +
+      `</blockquote>\n\n` +
 
-        `💡 Tips\n` +
-        `<i>• Use /s to search for tokens\n` +
-        `• Use /c to view price charts\n` +
-        `• Use /whale to track big players</i>\n\n` +
+      `💡 <b>Tips</b>\n` +
+      `<i>• Use /s to search for tokens\n` +
+      `• Use /c to view price charts\n` +
+      `• Use /whale to track big players</i>\n\n` +
 
-        `<b>⚠️ System Status: ONLINE</b>\n` +
-        `<b>🔋 Power Level: 100%</b>\n` +
-        `<b>🌐 Network: Solana Mainnet</b>`;
+      `<b>⚠️ System Status: ONLINE</b>\n` +
+      `<b>🔋 Power Level: 100%</b>\n` +
+      `<b>🌐 Network: Solana Mainnet</b>`;
 
-      await ctx.reply(message, { parse_mode: "HTML" });
-   
+    await ctx.reply(message, { parse_mode: "HTML" });
   });
 
   // Setup callback query handlers for inline buttons
