@@ -438,3 +438,57 @@ export async function getKnownProgramAccounts() {
   }
 }
 
+interface NewsArticle {
+  id: number;
+  headline: string;
+  summary: string;
+  category: string;
+  source: string;
+  url: string;
+  image: string;
+  datetime: number;
+}
+
+export async function getCryptoMarketNews(category = "crypto", limit = 7) {
+  try {
+    // API configuration
+    const API_KEY = process.env.FINHUB_API_KEY; // Get API key from environment variables for security
+    const baseUrl = `https://finnhub.io/api/v1/news?category=${category}&minId=10&token=${API_KEY}`; // Replace with actual news API URL
+    
+    // Make the API request
+    const response = await fetch(baseUrl, {
+      method: "GET",
+    });
+    
+    if (!response.ok) {
+      throw new Error(`News API error: ${response.status} ${response.statusText}`);
+    }
+    
+    // Parse the response and assert type
+    const newsData = await response.json() as NewsArticle[];
+    
+    // Process and format the news data, limiting to 7 articles
+    const formattedNews = newsData.slice(0, limit).map(article => ({
+      id: article.id,
+      headline: article.headline,
+      summary: article.summary,
+      category: article.category,
+      source: article.source,
+      url: article.url,
+      image: article.image,
+      datetime: article.datetime,
+      // Format datetime as readable string
+      date: new Date(article.datetime * 1000).toLocaleString(),
+      // Create a shorter summary for display purposes
+      shortSummary: article.summary?.length > 100 
+        ? `${article.summary.substring(0, 97)}...` 
+        : article.summary
+    }));
+    
+    console.log(`Fetched ${formattedNews.length} ${category} news articles`);
+    return formattedNews;
+  } catch (error) {
+    console.error("Error fetching crypto market news:", error);
+    throw error;
+  }
+}

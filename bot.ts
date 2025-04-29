@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts,  getCryptoMarketNews } from "./apis/utils";
 import { roastWalletPerformance } from "./apis/prompt";
 import fs from "fs";
 import { InputFile } from "grammy";
@@ -585,6 +585,60 @@ export function startBot() {
       }
     },
 
+    async markets(ctx: Context) {
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      try {
+        const generalNews = await getCryptoMarketNews("general", 7);
+        
+        // Create cyberpunk-themed message
+        let message = `*📰 MARKET PULSE SCAN* 📰\n\n`;
+        message += `*🌐 Global Market Updates*\n\n`;
+
+        generalNews.forEach((article, index) => {
+          message += `*${index + 1}. ${article.headline}*\n`;
+          message += `📅 ${article.date}\n`;
+          message += `📝 ${article.shortSummary}\n`;
+          message += `🔗 [Read More](${article.url})\n`;
+          message += `📌 Source: ${article.source}\n\n`;
+        });
+
+        message += `*💡 Stay informed with the latest market movements*\n`;
+        message += `Use /crypto for crypto-specific news`;
+
+        await ctx.reply(message, { parse_mode: "Markdown" });
+      } catch (error) {
+        console.error('Error fetching market news:', error);
+        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch market news. Please try again later.", { parse_mode: "Markdown" });
+      }
+    },
+
+    async crypto(ctx: Context) {
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      try {
+        const cryptoNews = await getCryptoMarketNews("crypto", 7);
+        
+        // Create cyberpunk-themed message
+        let message = `*🚀 CRYPTO NEWS MATRIX* 🚀\n\n`;
+        message += `*💎 Latest Crypto Updates*\n\n`;
+
+        cryptoNews.forEach((article, index) => {
+          message += `*${index + 1}. ${article.headline}*\n`;
+          message += `📅 ${article.date}\n`;
+          message += `📝 ${article.shortSummary}\n`;
+          message += `🔗 [Read More](${article.url})\n`;
+          message += `📌 Source: ${article.source}\n\n`;
+        });
+
+        message += `*💡 Stay ahead of the crypto curve*\n`;
+        message += `Use /markets for general market news`;
+
+        await ctx.reply(message, { parse_mode: "Markdown" });
+      } catch (error) {
+        console.error('Error fetching crypto news:', error);
+        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch crypto news. Please try again later.", { parse_mode: "Markdown" });
+      }
+    },
+
     async help(ctx) {
       const message = `*🌌 VYBGEN COMMAND MATRIX 🌌*\n\n` +
         `*💰 Wallet Analysis*\n` +
@@ -594,15 +648,19 @@ export function startBot() {
         `/portfolio - Manage your digital assets\n\n` +
         
         `*🔍 Token Research*\n` +
-        `/tokens - Top tokens in the matrix\n` +
         `/s [mint] - Token deep dive\n` +
-        `/tt [mint] - Token transfer history\n` +
         `/whale [mint] - Top holders analysis\n` +
         `/c [mint] - Price chart visualization\n\n` +
         
         `*🧩 Program Analysis*\n` +
         `/program - Discover programs\n` +
         `/program [address] - Program details\n\n` +
+
+        `*💃🏼 Fun, News*\n` +
+        `/roast [address] - Roast addresses\n` +
+        `/markets: View Global Market Status\n` +
+        `/crypto - Get update on crypto news/price\n` +
+        `/motivate - Don't give up\n\n` +
         
         `*💡 Tips*\n` +
         `• Use /s to search for tokens\n` +
@@ -775,9 +833,7 @@ export function startBot() {
       `/portfolio - Manage wallets\n\n` +
 
       `*🔍 Token Research:*\n` +
-      `/tokens - Browse trending tokens\n` +
       `/s [mintAddress/name] - Search tokens\n` +
-      `/tt [mintAddress] - Token transfers\n` +
       `/whale [mintAddress] - Top holders\n\n` +
       `/c [mintAddress] - Generate a Chart\n\n` +
 
@@ -789,7 +845,8 @@ export function startBot() {
       `*💃 News, Fun and Others:*\n` +
       `/roast [address] - Roast wallets based on PnL\n` +
       `/markets - Get update on news\n\n` +
-      `/crypto - Get update on crypto news\n\n` +
+      `/crypto - Get update on crypto news/price\n` +
+      `/motivate - Don't give up\n\n` +
 
       `Type /help for a complete list of commands and examples.`
     );
