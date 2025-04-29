@@ -602,52 +602,76 @@ export function startBot() {
 
     async news(ctx: Context) {
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      /**
+       * Format date string to a cleaner format
+       * @param dateStr Original date string
+       * @returns Formatted date string
+       */
+      function formatDate(dateStr: string): string {
+        try {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {
+          return dateStr; // Return original if parsing fails
+        }
+      }
       try {
-        const generalNews = await getCryptoMarketNews("general", 7);
+        // Fetch both news types simultaneously
+        const [generalNews, cryptoNews] = await Promise.all([
+          getCryptoMarketNews("general", 3), // Reduced to 3 for better readability
+          getCryptoMarketNews("crypto", 3)   // Reduced to 3 for better readability
+        ]);
 
-        // Create cyberpunk-themed message
-        let message = `*📰 MARKET PULSE SCAN* 📰\n\n`;
-        message += `*🌐 Global Market Updates*\n\n`;
+        // Create minimalist but structured message
+        let message = `*📊 MARKET NEWS*\n\n`;
+
+        // General Market News Section
+        message += `*GLOBAL MARKETS*\n`;
 
         generalNews.forEach((article, index) => {
-          message += `*${index + 1}. ${article.headline}*\n`;
-          message += `📅 ${article.date}\n`;
-          message += `📝 ${article.shortSummary}\n`;
-          message += `🔗 [Read More](${article.url})\n`;
-          message += `📌 Source: ${article.source}\n\n`;
+          const isLast = index === generalNews.length - 1;
+          const prefix = isLast ? '└' : '├';
+
+          message += `${prefix} *${article.headline}*\n`;
+          if (!isLast) {
+            message += ` ├ ${formatDate(article.date)}\n`;
+            message += ` ├ ${article.shortSummary}\n`;
+            message += ` └ [Source: ${article.source}](${article.url})\n\n`;
+          } else {
+            message += ` ├ ${formatDate(article.date)}\n`;
+            message += ` ├ ${article.shortSummary}\n`;
+            message += ` └ [Source: ${article.source}](${article.url})\n\n`;
+          }
         });
 
-        message += `*💡 Stay informed with the latest market movements*\n`;
-        message += `Use /crypto for crypto-specific news`;
-
-        await ctx.reply(message, { parse_mode: "Markdown" });
-      } catch (error) {
-        console.error('Error fetching market news:', error);
-        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch market news. Please try again later.", { parse_mode: "Markdown" });
-      }
-
-      try {
-        const cryptoNews = await getCryptoMarketNews("crypto", 7);
-
-        // Create cyberpunk-themed message
-        let message = `*🚀 CRYPTO NEWS MATRIX* 🚀\n\n`;
-        message += `*💎 Latest Crypto Updates*\n\n`;
+        // Crypto News Section
+        message += `*CRYPTO MARKETS*\n`;
 
         cryptoNews.forEach((article, index) => {
-          message += `*${index + 1}. ${article.headline}*\n`;
-          message += `📅 ${article.date}\n`;
-          message += `📝 ${article.shortSummary}\n`;
-          message += `🔗 [Read More](${article.url})\n`;
-          message += `📌 Source: ${article.source}\n\n`;
-        });
+          const isLast = index === cryptoNews.length - 1;
+          const prefix = isLast ? '└' : '├';
 
-        message += `*💡 Stay ahead of the crypto curve*\n`;
-        message += `Use /markets for general market news`;
+          message += `${prefix} *${article.headline}*\n`;
+          if (!isLast) {
+            message += ` ├ ${formatDate(article.date)}\n`;
+            message += ` ├ ${article.shortSummary}\n`;
+            message += ` └ [Source: ${article.source}](${article.url})\n\n`;
+          } else {
+            message += ` ├ ${formatDate(article.date)}\n`;
+            message += ` ├ ${article.shortSummary}\n`;
+            message += ` └ [Source: ${article.source}](${article.url})\n\n`;
+          }
+        });
 
         await ctx.reply(message, { parse_mode: "Markdown" });
       } catch (error) {
-        console.error('Error fetching crypto news:', error);
-        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch crypto news. Please try again later.", { parse_mode: "Markdown" });
+        console.error('Error fetching news:', error);
+        await ctx.reply("*ERROR*\nCould not retrieve market news. Try again later.", { parse_mode: "Markdown" });
       }
     },
 
