@@ -9,7 +9,7 @@ vybeApi.auth(vybe_token);
  * @param {string} ownerAddress - The wallet address to query
  * @returns {Promise<Object>} - Object containing total value and token details
  */
-export async function getWalletTokens(ownerAddress: string) {
+export async function getWalletTokens(ownerAddress: any) {
   try {
     // Fetch wallet data
     const response = await vybeApi.get_wallet_tokens({ ownerAddress });
@@ -143,9 +143,8 @@ export async function getTokensSummary(limit = 10) {
  * @param {string} ownerAddress - The wallet address to query
  * @returns {Promise<Object>} - Object containing total values for PnL details
  */
-export async function getWalletPnL(ownerAddress, resolution = '7d') {
+export async function getWalletPnL(ownerAddress, resolution: "1d" | "7d" | "30d" = '7d') {
   try {
-
     // Fetch wallet PnL data
     const response = await vybeApi.get_wallet_pnl({
       resolution: resolution,
@@ -154,61 +153,57 @@ export async function getWalletPnL(ownerAddress, resolution = '7d') {
 
     const data = response.data;
 
-    // Format the summary data
+    // Format the summary data with null checks
     const summary = {
-      winRate: Number(data.summary.winRate.toFixed(2)),
-      realizedPnlUsd: Number(data.summary.realizedPnlUsd.toFixed(2)),
-      unrealizedPnlUsd: Number(data.summary.unrealizedPnlUsd.toFixed(2)),
-      totalPnlUsd: Number((data.summary.realizedPnlUsd + data.summary.unrealizedPnlUsd).toFixed(2)),
-      uniqueTokensTraded: data.summary.uniqueTokensTraded,
-      averageTradeUsd: Number(data.summary.averageTradeUsd.toFixed(2)),
-      tradesCount: data.summary.tradesCount,
-      winningTradesCount: data.summary.winningTradesCount,
-      losingTradesCount: data.summary.losingTradesCount,
-      tradesVolumeUsd: Number(data.summary.tradesVolumeUsd.toFixed(2)),
-      bestPerformingToken: {
-        symbol: data.summary.bestPerformingToken.tokenSymbol,
-        address: data.summary.bestPerformingToken.tokenAddress,
-        name: data.summary.bestPerformingToken.tokenName,
-        logoUrl: data.summary.bestPerformingToken.tokenLogoUrl,
-        pnlUsd: Number(data.summary.bestPerformingToken.pnlUsd.toFixed(2))
-      },
-      worstPerformingToken: {
-        symbol: data.summary.worstPerformingToken.tokenSymbol,
-        address: data.summary.worstPerformingToken.tokenAddress,
-        name: data.summary.worstPerformingToken.tokenName,
-        logoUrl: data.summary.worstPerformingToken.tokenLogoUrl,
-        pnlUsd: Number(data.summary.worstPerformingToken.pnlUsd.toFixed(2))
-      },
-      // Format the trend data
-      pnlTrend: data.summary.pnlTrendSevenDays.map(day => {
-        return {
-          date: new Date(day[0]).toISOString().split('T')[0],
-          pnlUsd: Number(day[1].toFixed(2))
-        };
-      })
+      winRate: Number((data.summary?.winRate || 0).toFixed(2)),
+      realizedPnlUsd: Number((data.summary?.realizedPnlUsd || 0).toFixed(2)),
+      unrealizedPnlUsd: Number((data.summary?.unrealizedPnlUsd || 0).toFixed(2)),
+      totalPnlUsd: Number(((data.summary?.realizedPnlUsd || 0) + (data.summary?.unrealizedPnlUsd || 0)).toFixed(2)),
+      uniqueTokensTraded: data.summary?.uniqueTokensTraded || 0,
+      averageTradeUsd: Number((data.summary?.averageTradeUsd || 0).toFixed(2)),
+      tradesCount: data.summary?.tradesCount || 0,
+      winningTradesCount: data.summary?.winningTradesCount || 0,
+      losingTradesCount: data.summary?.losingTradesCount || 0,
+      tradesVolumeUsd: Number((data.summary?.tradesVolumeUsd || 0).toFixed(2)),
+      bestPerformingToken: data.summary?.bestPerformingToken ? {
+        symbol: data.summary.bestPerformingToken.tokenSymbol || "N/A",
+        address: data.summary.bestPerformingToken.tokenAddress || "N/A",
+        name: data.summary.bestPerformingToken.tokenName || "N/A",
+        logoUrl: data.summary.bestPerformingToken.tokenLogoUrl || "",
+        pnlUsd: Number((data.summary.bestPerformingToken.pnlUsd || 0).toFixed(2))
+      } : null,
+      worstPerformingToken: data.summary?.worstPerformingToken ? {
+        symbol: data.summary.worstPerformingToken.tokenSymbol || "N/A",
+        address: data.summary.worstPerformingToken.tokenAddress || "N/A",
+        name: data.summary.worstPerformingToken.tokenName || "N/A",
+        logoUrl: data.summary.worstPerformingToken.tokenLogoUrl || "",
+        pnlUsd: Number((data.summary.worstPerformingToken.pnlUsd || 0).toFixed(2))
+      } : null,
+      // Format the trend data with null check
+      pnlTrend: (data.summary?.pnlTrendSevenDays || []).map(day => ({
+        date: new Date(day[0]).toISOString().split('T')[0],
+        pnlUsd: Number((day[1] || 0).toFixed(2))
+      }))
     };
 
-    // Format token metrics
-    const tokenMetrics = data.tokenMetrics.map(token => {
-      return {
-        address: token.tokenAddress,
-        symbol: token.tokenSymbol,
-        realizedPnlUsd: Number(token.realizedPnlUsd.toFixed(2)),
-        unrealizedPnlUsd: Number(token.unrealizedPnlUsd.toFixed(2)),
-        totalPnlUsd: Number((token.realizedPnlUsd + token.unrealizedPnlUsd).toFixed(2)),
-        buys: {
-          volumeUsd: Number(token.buys.volumeUsd.toFixed(2)),
-          tokenAmount: Number(token.buys.tokenAmount.toFixed(2)),
-          transactionCount: token.buys.transactionCount
-        },
-        sells: {
-          volumeUsd: Number(token.sells.volumeUsd.toFixed(2)),
-          tokenAmount: Number(token.sells.tokenAmount.toFixed(2)),
-          transactionCount: token.sells.transactionCount
-        }
-      };
-    });
+    // Format token metrics with null checks
+    const tokenMetrics = (data.tokenMetrics || []).map(token => ({
+      address: token.tokenAddress || "N/A",
+      symbol: token.tokenSymbol || "N/A",
+      realizedPnlUsd: Number((token.realizedPnlUsd || 0).toFixed(2)),
+      unrealizedPnlUsd: Number((token.unrealizedPnlUsd || 0).toFixed(2)),
+      totalPnlUsd: Number(((token.realizedPnlUsd || 0) + (token.unrealizedPnlUsd || 0)).toFixed(2)),
+      buys: {
+        volumeUsd: Number((token.buys?.volumeUsd || 0).toFixed(2)),
+        tokenAmount: Number((token.buys?.tokenAmount || 0).toFixed(2)),
+        transactionCount: token.buys?.transactionCount || 0
+      },
+      sells: {
+        volumeUsd: Number((token.sells?.volumeUsd || 0).toFixed(2)),
+        tokenAmount: Number((token.sells?.tokenAmount || 0).toFixed(2)),
+        transactionCount: token.sells?.transactionCount || 0
+      }
+    }));
 
     // Sort tokens by total PnL (highest first)
     const sortedTokenMetrics = tokenMetrics.sort((a, b) => b.totalPnlUsd - a.totalPnlUsd);
@@ -421,7 +416,7 @@ export async function getTokenChart(mintAddress, resolution: "1d" | "7d" | "30d"
       mintAddress: mintAddress
     })
 
-    console.log("generateChartImage call:", response.data)
+    //console.log("generateChartImage call:", response.data)
     const imagePath = await generateChartImage(response.data.data)
     return imagePath
   } catch (error) {
@@ -443,3 +438,57 @@ export async function getKnownProgramAccounts() {
   }
 }
 
+interface NewsArticle {
+  id: number;
+  headline: string;
+  summary: string;
+  category: string;
+  source: string;
+  url: string;
+  image: string;
+  datetime: number;
+}
+
+export async function getCryptoMarketNews(category = "crypto", limit = 7) {
+  try {
+    // API configuration
+    const API_KEY = process.env.FINHUB_API_KEY; // Get API key from environment variables for security
+    const baseUrl = `https://finnhub.io/api/v1/news?category=${category}&minId=10&token=${API_KEY}`; // Replace with actual news API URL
+    
+    // Make the API request
+    const response = await fetch(baseUrl, {
+      method: "GET",
+    });
+    
+    if (!response.ok) {
+      throw new Error(`News API error: ${response.status} ${response.statusText}`);
+    }
+    
+    // Parse the response and assert type
+    const newsData = await response.json() as NewsArticle[];
+    
+    // Process and format the news data, limiting to 7 articles
+    const formattedNews = newsData.slice(0, limit).map(article => ({
+      id: article.id,
+      headline: article.headline,
+      summary: article.summary,
+      category: article.category,
+      source: article.source,
+      url: article.url,
+      image: article.image,
+      datetime: article.datetime,
+      // Format datetime as readable string
+      date: new Date(article.datetime * 1000).toLocaleString(),
+      // Create a shorter summary for display purposes
+      shortSummary: article.summary?.length > 100 
+        ? `${article.summary.substring(0, 97)}...` 
+        : article.summary
+    }));
+    
+    console.log(`Fetched ${formattedNews.length} ${category} news articles`);
+    return formattedNews;
+  } catch (error) {
+    console.error("Error fetching crypto market news:", error);
+    throw error;
+  }
+}
