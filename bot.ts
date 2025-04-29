@@ -26,17 +26,14 @@ export function startBot() {
     async tb(ctx: Context, walletAddress?: string) {
       // https://docs.vybenetwork.com/reference/get_wallet_tokens
       const username = ctx.from.username;
-      if (!ctx.match) {
-        return ctx.reply("Please sent a wallet address");
+      if (!ctx.match && !walletAddress) {
+        return ctx.reply("<b>⚠️ ERROR</b>\n<i>Please provide a wallet address</i>", { parse_mode: "HTML" });
       }
+
       // Use provided mintAddress or get from ctx.match
       const address = walletAddress || ctx.match;
 
-      if (!address) {
-        return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
-      }
-
-      console.log(`token-balance | username: ${username}, address: ${address}`);
+      console.log(`token-balance | username: ${username || "unknown"}, address: ${address}`);
       try {
         // Show typing indicator while processing
         await ctx.api.sendChatAction(ctx.chat!.id, "typing");
@@ -44,70 +41,115 @@ export function startBot() {
         // Get wallet data
         const walletData = await getWalletTokens(address);
 
-        // Format the total value with commas and 2 decimal places
+        // Create shortened address for display
+        const shortAddress = `${address.slice(0, 4)}...${address.slice(-4)}`;
+
+        // Safely parse total value (handling potential empty/null values)
+        const totalValue = parseFloat(walletData.totalValueUsd || "0");
         const formattedTotal = new Intl.NumberFormat('en-US', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
-        }).format(parseFloat(walletData.totalValueUsd));
+        }).format(totalValue);
 
         // Generate emoji based on portfolio value
-        let emoji = "🚀"; // Default
-        if (parseFloat(walletData.totalValueUsd) > 100000) {
-          emoji = "💎🙌";
-        } else if (parseFloat(walletData.totalValueUsd) > 10000) {
-          emoji = "🔥";
+        let statusEmoji = "🚀"; // Default
+        if (totalValue > 100000) {
+          statusEmoji = "💎";
+        } else if (totalValue > 10000) {
+          statusEmoji = "🔥";
+        } else if (totalValue === 0) {
+          statusEmoji = "👻"; // Ghost emoji for empty wallets
         }
 
-        // Create message header
-        let message = `${emoji} *WALLET REPORT* ${emoji}\n\n`;
-        message += `💰 *Total Value:* $${formattedTotal}\n`;
-        message += `🔢 *Token Count:* ${walletData.tokenCount}\n\n`;
+        // Create message header with clean formatting
+        let message = `<b>${statusEmoji} WALLET REPORT</b>\n\n`;
 
-        // Sort tokens by value (highest first)
-        const sortedTokens = [...walletData.tokens].sort((a, b) =>
-          parseFloat(b.valueUsd) - parseFloat(a.valueUsd)
-        );
+        // Key stats section with fixed borders
+        message += `<code>────────────────────────</code>\n`;
+        message += `<b>Address:</b> ${shortAddress}\n`;
+        message += `<b>Value:</b> $ ${formattedTotal} \n`;
+        message += `<b>Tokens:</b> ${walletData.tokenCount || 0}\n`;
+        message += `<code>────────────────────────</code>\n\n`;
 
-        // Add token details
-        message += "*Token Breakdown:*\n";
-        sortedTokens.forEach((token, index) => {
-          // Format the USD value
-          const valueFormatted = new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          }).format(parseFloat(token.valueUsd));
+        // Add explorer link
+        message += `<a href="https://explorer.solana.com/address/${address}">🔍 View on Explorer</a>\n\n`;
 
-          // Add token emojis based on type
-          let tokenEmoji = "🪙";
-          if (token.symbol === "SOL") tokenEmoji = "⚡";
-          if (token.symbol === "USDC" || token.symbol === "USDT") tokenEmoji = "💵";
-          if (parseFloat(token.valueUsd) > 10000) tokenEmoji = "🌕"; // Moon emoji for high value tokens
+        // Handle empty wallet case
+        if (!walletData.tokens || walletData.tokens.length === 0) {
+          message += `<i>This wallet contains no tokens</i>\n\n`;
+        } else {
+          // Sort tokens by value (highest first)
+          const sortedTokens = [...walletData.tokens].sort((a, b) =>
+            parseFloat(b.valueUsd || "0") - parseFloat(a.valueUsd || "0")
+          );
 
-          message += `${tokenEmoji} *${token.symbol}* - $${valueFormatted}\n`;
-        });
+          // Display top 3 tokens prominently
+          message += `<b>TOP HOLDINGS</b>\n`;
 
-        // Add footer with wallet address preview
-        const shortAddress = `${address}`;
-        message += `\n🔍 Address: \`${shortAddress}\`\n`;
-        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${address})\n\n`;
+          for (let i = 0; i < Math.min(3, sortedTokens.length); i++) {
+            const token = sortedTokens[i];
+            const tokenValue = parseFloat(token.valueUsd || "0");
+            const valueFormatted = new Intl.NumberFormat('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }).format(tokenValue);
 
-        message += `*💡 Quick Actions*\n`;
+            // Token icon selection
+            let tokenIcon = "•";
+            if (token.symbol === "SOL") tokenIcon = "◎";
+            if (token.symbol === "USDC" || token.symbol === "USDT") tokenIcon = "$";
+
+            message += `${tokenIcon} <b>${token.symbol}</b>: ${valueFormatted}\n`;
+          }
+          message += `\n`;
+
+          // Add remaining tokens in an expandable blockquote
+          if (sortedTokens.length > 3) {
+            const remainingTokens = sortedTokens.slice(3);
+
+            message += `<blockquote expandable><b>ALL TOKENS (${sortedTokens.length})</b>\n`;
+
+            // Add all tokens including the top 3 again for completeness in the expanded view
+            sortedTokens.forEach((token, index) => {
+              const tokenValue = parseFloat(token.valueUsd || "0");
+              const valueFormatted = new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(tokenValue);
+
+              // Token icon selection
+              let tokenIcon = "•";
+              if (token.symbol === "SOL") tokenIcon = "◎";
+              if (token.symbol === "USDC" || token.symbol === "USDT") tokenIcon = "$";
+
+              message += `${index + 1}. ${tokenIcon} <b>${token.symbol}</b>: ${valueFormatted}\n`;
+            });
+
+            message += `</blockquote>\n\n`;
+          }
+        }
+
+        // Add actions section
+        message += `<b>QUICK ACTIONS</b>`;
+
         const keyboard = new InlineKeyboard()
+          .row()
           .text("🎨 NFTs", `nb_${address}`)
           .text("📊 PnL", `pnl_${address}`)
+          .row()
           .text("💀 Roast", `roast_${address}`)
+          .text("🔄 Refresh", `tb_${address}`);
 
         await ctx.reply(message, {
-          parse_mode: "Markdown",
+          parse_mode: "HTML",
           reply_markup: keyboard,
           reply_parameters: { message_id: ctx.msg.message_id },
         });
 
       } catch (error) {
         console.error('Failed to send wallet report:', error);
-        await ctx.reply("⚠️ Failed to fetch wallet data. Please check the address and try again.");
+        await ctx.reply("⚠️ <b>SYSTEM ERROR</b>\n<i>Failed to fetch wallet data. Please check the address and try again.</i>", { parse_mode: "HTML" });
       }
-      // To repsone message part here
     },
 
     async nb(ctx: Context, walletAddress?: string) {
