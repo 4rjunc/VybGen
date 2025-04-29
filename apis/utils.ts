@@ -1,5 +1,6 @@
 import vybeApi from '@api/vybe-api';
 import { generateChartImage } from "./chart"
+import axios from 'axios';
 
 const vybe_token = process.env.VYBE_TOKEN;
 vybeApi.auth(vybe_token);
@@ -410,7 +411,7 @@ export async function getTopTokenHolders(mintAddress, limit = 10) {
  * @param {string} mintAddress - The token's mint address
  * @param {number} resolution - Resolution of the data
  */
-export async function getTokenChart(mintAddress, resolution: "1d" | "1w" | "1h" = '1d') {
+export async function getTokenChart(mintAddress, resolution: "1d" | "7d" | "30d" = '1d') {
   try {
     const response = await vybeApi.get_token_trade_ohlc({
       resolution: resolution,
@@ -847,3 +848,90 @@ function predictTomorrowStatus(status: MarketStatusResponse): string {
 }
 
 
+
+export interface Token {
+  name: string;
+  symbol: string;
+  price: number;
+  marketCap: number;
+  currentSupply: number;
+  mintAddress: string;
+}
+
+export type SortField = 'name' | 'symbol' | 'price' | 'marketCap' | 'currentSupply' | 'mintAddress';
+export type SortDirection = 'asc' | 'desc';
+
+/**
+ * Fetches tokens from the VYBE API with sorting options
+ */
+export async function getTopTokens(
+  sortBy: SortField = 'marketCap', 
+  sortDirection: SortDirection = 'desc',
+  limit: number = 10
+): Promise<Token[]> {
+  try {
+    console.log('🔍 Starting getTopTokens with params:', { sortBy, sortDirection, limit });
+    
+    // Authenticate with the API
+    vybeApi.auth(vybe_token);
+    console.log('✅ API authentication successful');
+    
+    // Prepare parameters object
+    const params: Record<string, string> = {
+      limit: String(limit)
+    };
+    
+    // Add sorting parameter
+    if (sortDirection === 'asc') {
+      params.sortByAsc = sortBy;
+    } else {
+      params.sortByDesc = sortBy;
+    }
+    
+    console.log('📤 Making API request with params:', params);
+    
+    // Make API request
+    const response = await vybeApi.get_tokens_summary(params);
+    console.log('📥 Received API response:', JSON.stringify(response, null, 2));
+    
+    if (!response) {
+      console.error('❌ No response received from API');
+      throw new Error('No response received from API');
+    }
+    
+    if (!response.data || !response.data.data) {
+      console.error('❌ No data in API response');
+      throw new Error('No data in API response');
+    }
+    
+    if (!Array.isArray(response.data.data)) {
+      console.error('❌ Invalid data structure:', typeof response.data.data);
+      throw new Error('Invalid API response structure');
+    }
+    
+    console.log(`✅ Successfully received ${response.data.data.length} tokens`);
+
+    // Map API response to Token interface
+    const tokens: Token[] = response.data.data.map(token => {
+      console.log('🔍 Processing token:', token.symbol);
+      return {
+        name: token.name || 'Unknown',
+        symbol: token.symbol || 'UNKNOWN',
+        price: token.price || 0,
+        marketCap: token.marketCap || 0,
+        currentSupply: token.currentSupply || 0,
+        mintAddress: token.mintAddress || '',
+      };
+    });
+
+    console.log('✅ Successfully processed tokens');
+    return tokens;
+  } catch (error) {
+    console.error('❌ Error in getTopTokens:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data
+    });
+    throw new Error('Failed to fetch tokens from VYBE API');
+  }
+}

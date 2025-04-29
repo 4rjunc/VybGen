@@ -1,11 +1,12 @@
 import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts, getCryptoMarketNews, getGlobalMarketStatus } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts,  getCryptoMarketNews, SortField, SortDirection, getTopTokens, getGlobalMarketStatus } from "./apis/utils";
 import { generateCryptoMotivation, roastWalletPerformance } from "./apis/prompt";
 import fs from "fs";
 import { InputFile } from "grammy";
 import { createClient } from '@supabase/supabase-js';
+
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -876,6 +877,102 @@ export function startBot() {
           await ctx.reply("⚠️ Failed to create your portfolio report. Please try again later.");
         }
       }
+    },
+
+    async handleSort(ctx: Context) {
+      await ctx.reply('Which field would you like to sort by?', {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'Name', callback_data: 'sort_field_name' },
+              { text: 'Symbol', callback_data: 'sort_field_symbol' }
+            ],
+            [
+              { text: 'Price', callback_data: 'sort_field_price' },
+              { text: 'Market Cap', callback_data: 'sort_field_marketCap' }
+            ],
+            [
+              { text: 'Current Supply', callback_data: 'sort_field_currentSupply' },
+              { text: 'Mint Address', callback_data: 'sort_field_mintAddress' }
+            ]
+          ]
+        }
+      });
+    },
+
+    async handleFieldSelection(ctx: Context) {
+      const callbackQuery = ctx.callbackQuery;
+      if (!callbackQuery || typeof callbackQuery.data !== 'string') return;
+      
+      const field = callbackQuery.data.replace('sort_field_', '') as SortField;
+      
+      await ctx.editMessageText(`Sort ${field} in ascending or descending order?`, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '⬆️ Ascending', callback_data: `sort_dir_${field}_asc` },
+              { text: '⬇️ Descending', callback_data: `sort_dir_${field}_desc` }
+            ]
+          ]
+        }
+      });
+    },
+
+    async handleDirectionSelection(ctx: Context) {
+      const callbackQuery = ctx.callbackQuery;
+      if (!callbackQuery || typeof callbackQuery.data !== 'string') return;
+      
+      const parts = callbackQuery.data.replace('sort_dir_', '').split('_');
+      const field = parts[0] as SortField;
+      const direction = parts[1] as SortDirection;
+      
+      await ctx.editMessageText(`Fetching tokens sorted by ${field} in ${direction === 'asc' ? 'ascending' : 'descending'} order...`);
+      await this.displayTokens(ctx, field, direction);
+    },
+
+    async displayTokens(
+      ctx: Context,
+      sortBy: SortField = 'marketCap',
+      sortDirection: SortDirection = 'desc'
+    ) {
+      console.log('🔍 Starting displayTokens with params:', { sortBy, sortDirection });
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      
+      try {
+        console.log('📤 Fetching tokens from API...');
+        const tokens = await getTopTokens(sortBy, sortDirection);
+        console.log(`✅ Successfully fetched ${tokens.length} tokens`);
+        
+        let message = `*🏆 Top Tokens - Sorted by ${sortBy} (${sortDirection === 'asc' ? '↑' : '↓'})*\n\n`;
+        
+        console.log('📝 Formatting message...');
+        tokens.slice(0, 10).forEach((token, index) => {
+          console.log(`🔍 Processing token ${index + 1}:`, token.symbol);
+          const formattedPrice = token.price < 1 ? token.price.toFixed(6) : token.price.toFixed(2);
+          
+          message += `*${index + 1}. ${token.name} (${token.symbol.toUpperCase()})*\n`;
+          message += `💰 Market Cap: $${Math.round(token.marketCap).toLocaleString()}\n`;
+          message += `📈 Price: $${formattedPrice}\n`;
+          message += `📊 Supply: ${Math.round(token.currentSupply).toLocaleString()}\n`;
+          message += `🔑 ${token.mintAddress.substring(0, 8)}...${token.mintAddress.substring(token.mintAddress.length - 4)}\n\n`;
+        });
+        
+        console.log('📤 Sending message to user...');
+        await ctx.reply(message, { parse_mode: "Markdown" });
+        console.log('✅ Message sent successfully');
+      } catch (error) {
+        console.error('❌ Error in displayTokens:', {
+          message: error.message,
+          stack: error.stack,
+          response: error.response?.data
+        });
+        await ctx.reply("⚠️ Failed to fetch tokens. Please try again later.");
+      }
+    },
+
+    async lb(ctx: Context) {
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      await this.displayTokens(ctx, 'marketCap', 'desc');
     }
   };
 
