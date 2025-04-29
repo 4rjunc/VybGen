@@ -700,36 +700,44 @@ export function startBot() {
     async help(ctx) {
       const message = `*🌌 VYBGEN COMMAND MATRIX 🌌*\n\n` +
         `*💰 Wallet Analysis*\n` +
+        `<blockquote style="background-color: #1a1a2e; color: #e94560; padding: 10px; border-radius: 5px;">` +
         `/tb [address] - Token balance scan\n` +
         `/nb [address] - NFT collection analysis\n` +
         `/pnl [address] - Profit & loss metrics\n` +
-        `/portfolio - Manage your digital assets\n\n` +
+        `/portfolio - Manage your digital assets\n` +
+        `</blockquote>\n\n` +
 
         `*🔍 Token Research*\n` +
+        `<blockquote style="background-color: #16213e; color: #0f3460; padding: 10px; border-radius: 5px;">` +
         `/s [mint] - Token deep dive\n` +
         `/whale [mint] - Top holders analysis\n` +
-        `/c [mint] - Price chart visualization\n\n` +
+        `/c [mint] - Price chart visualization\n` +
+        `</blockquote>\n\n` +
 
         `*🧩 Program Analysis*\n` +
+        `<blockquote style="background-color: #0f3460; color: #e94560; padding: 10px; border-radius: 5px;">` +
         `/program - Discover programs\n` +
-        `/program [address] - Program details\n\n` +
+        `/program [address] - Program details\n` +
+        `</blockquote>\n\n` +
 
-        `*💃🏼 Fun, News*\n` +
+        `*💃🏼 Fun & News*\n` +
+        `<blockquote style="background-color: #e94560; color: #16213e; padding: 10px; border-radius: 5px;">` +
         `/roast [address] - Roast addresses\n` +
-        `/markets: View Global Market Status\n` +
+        `/markets - View Global Market Status\n` +
         `/news - Get update on global market and crypto news\n` +
-        `/motivate - Don't give up\n\n` +
+        `/motivate - Don't give up\n` +
+        `</blockquote>\n\n` +
 
         `*💡 Tips*\n` +
-        `• Use /s to search for tokens\n` +
+        `<i>• Use /s to search for tokens\n` +
         `• Use /c to view price charts\n` +
-        `• Use /whale to track big players\n\n` +
+        `• Use /whale to track big players</i>\n\n` +
 
-        `*⚠️ System Status: ONLINE*\n` +
-        `*🔋 Power Level: 100%*\n` +
-        `*🌐 Network: Solana Mainnet*`;
+        `<b>⚠️ System Status: ONLINE</b>\n` +
+        `<b>🔋 Power Level: 100%</b>\n` +
+        `<b>🌐 Network: Solana Mainnet</b>`;
 
-      await ctx.reply(message, { parse_mode: "Markdown" });
+      await ctx.reply(message, { parse_mode: "HTML" });
     },
 
     async program(ctx: Context) {
@@ -880,34 +888,48 @@ export function startBot() {
 
   bot.command("start", async (ctx) => {
     const userName = ctx.from?.first_name || "there";
+    const message = `🚀 Welcome to VybGen, ${userName}!\n\n` +
+    `I'm your personal Solana blockchain assistant. Here are the main commands you can use:\n\n` +
+        `💰 Wallet Analysis*\n` +
+        `<blockquote style="background-color: #1a1a2e; color: #e94560; padding: 10px; border-radius: 5px;">` +
+        `/tb [address] - Token balance scan\n` +
+        `/nb [address] - NFT collection analysis\n` +
+        `/pnl [address] - Profit & loss metrics\n` +
+        `/portfolio - Manage your digital assets\n` +
+        `</blockquote>\n\n` +
 
-    await ctx.reply(
-      `*🚀 Welcome to VybGen, ${userName}!*\n\n` +
-      `I'm your personal Solana blockchain assistant. Here are the main commands you can use:\n\n` +
-      `*💰 Wallet Commands:*\n` +
-      `/tb [wallet] - Token balances\n` +
-      `/nb [wallet] - NFT collection\n` +
-      `/pnl [wallet] - Profit & loss\n` +
-      `/portfolio - Manage wallets\n\n` +
+        `🔍 Token Research\n` +
+        `<blockquote style="background-color: #16213e; color: #0f3460; padding: 10px; border-radius: 5px;">` +
+        `/s [mint] - Token deep dive\n` +
+        `/whale [mint] - Top holders analysis\n` +
+        `/c [mint] - Price chart visualization\n` +
+        `</blockquote>\n\n` +
 
-      `*🔍 Token Research:*\n` +
-      `/s [mintAddress/name] - Search tokens\n` +
-      `/whale [mintAddress] - Top holders\n\n` +
-      `/c [mintAddress] - Generate a Chart\n\n` +
+        `🧩 Program Analysis\n` +
+        `<blockquote style="backgroundColor: #0f3460; color: #e94560; padding: 10px; border-radius: 5px;">` +
+        `/program - Discover programs\n` +
+        `/program [address] - Program details\n` +
+        `</blockquote>\n\n` +
 
+        `💃🏼 Fun & News\n` +
+        `<blockquote style="background-color: #e94560; color: #16213e; padding: 10px; border-radius: 5px;">` +
+        `/roast [address] - Roast addresses\n` +
+        `/markets - View Global Market Status\n` +
+        `/news - Get update on global market and crypto news\n` +
+        `/motivate - Don't give up\n` +
+        `</blockquote>\n\n` +
 
-      `*🧩 Program Analysis:*\n` +
-      `/program - Discover programs\n` +
-      `/program [address/name] - Program details\n\n` +
+        `💡 Tips\n` +
+        `<i>• Use /s to search for tokens\n` +
+        `• Use /c to view price charts\n` +
+        `• Use /whale to track big players</i>\n\n` +
 
-      `*💃 News, Fun and Others:*\n` +
-      `/roast [address] - Roast wallets based on PnL\n` +
-      `/markets: View Global Market Status\n` +
-      `/news - Get update on global market and crypto news\n` +
-      `/motivate - Don't give up\n\n` +
+        `<b>⚠️ System Status: ONLINE</b>\n` +
+        `<b>🔋 Power Level: 100%</b>\n` +
+        `<b>🌐 Network: Solana Mainnet</b>`;
 
-      `Type /help for a complete list of commands and examples.`
-    );
+      await ctx.reply(message, { parse_mode: "HTML" });
+   
   });
 
   // Setup callback query handlers for inline buttons
