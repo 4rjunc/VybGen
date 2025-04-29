@@ -421,7 +421,7 @@ export async function getTokenChart(mintAddress, resolution: "1d" | "7d" | "30d"
       mintAddress: mintAddress
     })
 
-    console.log("generateChartImage call:", response.data)
+    //console.log("generateChartImage call:", response.data)
     const imagePath = await generateChartImage(response.data.data)
     return imagePath
   } catch (error) {

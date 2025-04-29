@@ -91,7 +91,9 @@ export function startBot() {
 
         // Add footer with wallet address preview
         const shortAddress = `${walletAddress}`;
-        message += `\n🔍 Address: \`${shortAddress}\``;
+        message += `\n🔍 Address: \`${shortAddress}\ \n`;
+        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${walletAddress})\n\n`;
+
 
         // Send the message with Markdown formatting
         await ctx.reply(message, { parse_mode: "Markdown" });
@@ -127,7 +129,8 @@ export function startBot() {
 
         // Create cyberpunk-themed message
         let message = `*🎨 NFT COLLECTION SCAN* 🎨\n\n`;
-        message += `*Wallet:* \`${walletAddress}\`\n\n`;
+        message += `*Wallet:* \`${walletAddress}\`\n`;
+        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${walletAddress})\n\n`;
         message += `*📊 Collection Summary*\n`;
         message += `💰 *Total Value:* $${formatValue(nftData.summary.totalValueUsd)}\n`;
         message += `⚡ *Total Value (SOL):* ${formatValue(nftData.summary.totalValueSol)}\n`;
@@ -138,11 +141,13 @@ export function startBot() {
         nftData.collections.slice(0, 5).forEach((collection, index) => {
           message += `*${index + 1}. ${collection.name}*\n`;
           message += `📍 Collection: \`${collection.collectionAddress}\`\n`;
+          message += `🔗 [View Collection](https://explorer.solana.com/address/${collection.collectionAddress})\n`;
           message += `📦 Items: ${collection.itemCount}\n`;
           message += `💰 Value: $${formatValue(collection.valueUsd)}\n`;
           message += `⚡ Price (SOL): ${formatValue(collection.priceSol)}\n\n`;
         });
 
+        message += `*💡 Tip: Use /s [collection] to get detailed analysis*`;
 
         await ctx.reply(message, { parse_mode: "Markdown" });
       } catch (error) {
@@ -266,19 +271,22 @@ export function startBot() {
       }
     },
 
-    async s(ctx: Context) {
+    async s(ctx: Context, mintAddress?: string) {
       // https://docs.vybenetwork.com/reference/get_token_details
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
       const username = ctx.from.username;
-      if (!ctx.match) {
-        return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a token address to analyze", { parse_mode: "Markdown" });
-      }
-      const mintAddress: any = ctx.match // takes wallet address
 
-      console.log(`token search | username: ${username}, mint address: ${mintAddress}`);
+      // Use provided mintAddress or get from ctx.match
+      const address = mintAddress || ctx.match;
+      
+      if (!address) {
+        return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a token address to scan", { parse_mode: "Markdown" });
+      }
+      
+      console.log(`token search | username: ${username}, mint address: ${address}`);
 
       try {
-        const tokenData = await getTokenDetails(mintAddress);
+        const tokenData = await getTokenDetails(address);
         
         // Format values
         const formatValue = (value: number) => {
@@ -295,7 +303,8 @@ export function startBot() {
         // Create cyberpunk-themed message
         let message = `*🔍 TOKEN ANALYSIS* 🔍\n\n`;
         message += `*${tokenData.symbol} (${tokenData.name})*\n`;
-        message += `📍 Mint: \`${tokenData.mintAddress}\`\n\n`;
+        message += `📍 Mint: \`${tokenData.mintAddress}\`\n`;
+        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${tokenData.mintAddress})\n\n`;
 
         message += `*📊 Price Metrics*\n`;
         message += `💰 *Current Price:* $${formatValue(tokenData.price)}\n`;
@@ -309,16 +318,19 @@ export function startBot() {
 
         message += `*ℹ️ Token Info*\n`;
         message += `🔢 *Decimals:* ${tokenData.decimal}\n`;
-        message += `🏷️ *Category:* ${tokenData.category}\n`;
-        message += `📌 *Subcategory:* ${tokenData.subcategory}\n`;
         message += `✅ *Verified:* ${tokenData.verified ? 'Yes' : 'No'}\n\n`;
 
         message += `*💡 Quick Actions*\n`;
-        message += `• Use /c to view price chart\n`;
-        message += `• Use /whale to check top holders\n`;
-        message += `• Use /tt to see transfer history`;
 
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        // Create inline keyboard with whale button
+        const keyboard = new InlineKeyboard()
+          .text("🐋 Check Whales", `whale_${mintAddress}`)
+          .text("📊 Chart", `c_${mintAddress}`);
+
+        await ctx.reply(message, { 
+          parse_mode: "Markdown",
+          reply_markup: keyboard
+        });
       } catch (error) {
         console.error('Error fetching token details:', error);
         await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to analyze token. Please try again later.", { parse_mode: "Markdown" });
@@ -404,19 +416,22 @@ export function startBot() {
     },
 
 
-    async whale(ctx: Context) {
+    async whale(ctx: Context, mintAddress?: string) {
       // https://docs.vybenetwork.com/reference/get_top_holders
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
       const username = ctx.from.username;
-      if (!ctx.match) {
+      
+      // Use provided mintAddress or get from ctx.match
+      const address = mintAddress || ctx.match;
+      
+      if (!address) {
         return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a token address to scan", { parse_mode: "Markdown" });
       }
-      const mintAddress: any = ctx.match // takes wallet address
 
-      console.log(`whale | username: ${username}, mint address: ${mintAddress}`);
+      console.log(`whale | username: ${username}, mint address: ${address}`);
 
       try {
-        const whaleData = await getTopTokenHolders(mintAddress);
+        const whaleData = await getTopTokenHolders(address);
         
         // Format values
         const formatValue = (value: number) => {
@@ -429,7 +444,8 @@ export function startBot() {
         // Create cyberpunk-themed message
         let message = `*🐋 WHALE WATCH* 🐋\n\n`;
         message += `*Token:* ${whaleData.tokenSymbol}\n`;
-        message += `📍 Mint: \`${whaleData.tokenMint}\`\n\n`;
+        message += `📍 Mint: \`${whaleData.tokenMint}\`\n`;
+        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${whaleData.tokenMint})\n\n`;
 
         message += `*📊 Top Holders Summary*\n`;
         message += `💰 *Total Value:* $${formatValue(whaleData.summary.totalValue.usd)}\n`;
@@ -440,34 +456,60 @@ export function startBot() {
         whaleData.holders.slice(0, 5).forEach((holder, index) => {
           message += `*${index + 1}. ${holder.name}*\n`;
           message += `📍 Address: \`${holder.address}\`\n`;
+          message += `🔗 [View Wallet](https://explorer.solana.com/address/${holder.address})\n`;
           message += `💰 Value: $${formatValue(holder.value.usd)}\n`;
           message += `📦 Balance: ${formatValue(holder.balance.raw)}\n`;
           message += `📊 Supply %: ${holder.percentageOfSupply}%\n\n`;
         });
 
-        message += `*💡 Tip: Use /s to get token details*`;
+        message += `*💡 Quick Actions*\n`;
 
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        // Create inline keyboard with whale button
+        const keyboard = new InlineKeyboard()
+          .text("🪙 Token Info", `s_${mintAddress}`)
+          .text("📊 Chart", `c_${mintAddress}`);
+
+        await ctx.reply(message, { 
+          parse_mode: "Markdown",
+          reply_markup: keyboard
+        });
       } catch (error) {
         console.error('Error fetching whale data:', error);
         await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to scan top holders. Please try again later.", { parse_mode: "Markdown" });
       }
     },
 
-    async c(ctx: Context) {
+    async c(ctx: Context, mintAddress?: string) {
       //https://docs.vybenetwork.com/reference/get_token_trade_ohlc
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
       const username = ctx.from.username;
       if (!ctx.match) {
         return ctx.reply("Please sent a CA or Mint Address");
       }
-      const mintAddress: any = ctx.match // takes wallet address
+      // Use provided mintAddress or get from ctx.match
+      const address = mintAddress || ctx.match;
+      if (!address) {
+          return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a token address to scan", { parse_mode: "Markdown" });
+      }
       console.log(`charts | username: ${username}, mint address: ${mintAddress}`);
 
       try {
         const imagePath = await getTokenChart(mintAddress);
+
+        let message = `📍 Mint: \`${mintAddress}\`\n`;
+        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${mintAddress})\n`;
+        message += `*💡 Quick Actions*\n`;
+
+        // Create inline keyboard with whale button
+        const keyboard = new InlineKeyboard()
+          .text("🪙 Token Info", `s_${mintAddress}`)
+          .text("🐋 Check Whales", `whale_${mintAddress}`);
+
+        
         await ctx.replyWithPhoto(new InputFile(imagePath), {
-          caption: `Chart for token: ${mintAddress}`
+          caption: message,
+          parse_mode: "Markdown",
+          reply_markup: keyboard
         });
 
         // Clean up the temporary file
@@ -492,7 +534,8 @@ export function startBot() {
         
         // Create cyberpunk-themed message
         let message = `*🔥 WALLET ROAST ANALYSIS* 🔥\n\n`;
-        message += `*Target:* \`${walletAddress}\`\n\n`;
+        message += `*Target:* \`${walletAddress}\`\n`;
+        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${walletAddress})\n\n`;
         message += `*💀 Brutal Analysis*\n`;
         message += `${roast}\n\n`;
         message += `*⚠️ Disclaimer: This is for entertainment purposes only*`;
@@ -710,11 +753,7 @@ export function startBot() {
       `/markets - Get update on news\n\n` +
       `/crypto - Get update on crypto news\n\n` +
 
-      `Type /help for a complete list of commands and examples.`,
-      {
-        parse_mode: "Markdown",
-        reply_markup: mainInlineKeyboard
-      }
+      `Type /help for a complete list of commands and examples.`
     );
   });
 
@@ -788,6 +827,23 @@ export function startBot() {
         awaitingWalletAddress.delete(ctx.from.id);
       }
     }
+  });
+
+  // Add callback query handler for whale button
+  bot.callbackQuery(/^whale_/, async (ctx) => {
+    const mintAddress = ctx.callbackQuery.data.split('_')[1];
+    // Call the whale command handler directly
+    await commandHandlers.whale(ctx, mintAddress);
+  });
+  bot.callbackQuery(/^c_/, async (ctx) => {
+    const mintAddress = ctx.callbackQuery.data.split('_')[1];
+    // Call the whale command handler directly
+    await commandHandlers.c(ctx, mintAddress);
+  });
+  bot.callbackQuery(/^s_/, async (ctx) => {
+    const mintAddress = ctx.callbackQuery.data.split('_')[1];
+    // Call the whale command handler directly
+    await commandHandlers.s(ctx, mintAddress);
   });
 
   // Error handling
