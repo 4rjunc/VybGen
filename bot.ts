@@ -2,7 +2,7 @@ import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy"
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
 import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts, getCryptoMarketNews, getGlobalMarketStatus } from "./apis/utils";
-import { roastWalletPerformance } from "./apis/prompt";
+import { generateCryptoMotivation, roastWalletPerformance } from "./apis/prompt";
 import fs from "fs";
 import { InputFile } from "grammy";
 import { createClient } from '@supabase/supabase-js';
@@ -673,6 +673,28 @@ export function startBot() {
         console.error('Error fetching news:', error);
         await ctx.reply("*ERROR*\nCould not retrieve market news. Try again later.", { parse_mode: "Markdown" });
       }
+    },
+
+    async motivate(ctx: Context) {
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+
+      try {
+        const motivate = await generateCryptoMotivation();
+
+        // Create cyberpunk-themed message
+        let message = `*🔥  MOTIVATION* 🔥\n\n`;
+        message += `*  \`${motivate}\` * \n`;
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+        });
+
+
+      } catch (error) {
+        console.error('Error while motivating:', error);
+        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to generate motivate. Please try again later.", { parse_mode: "Markdown" });
+      }
+
+
     },
 
     async help(ctx) {
