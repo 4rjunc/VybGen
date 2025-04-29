@@ -99,7 +99,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
 
       } catch (error) {
@@ -161,7 +162,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
 
       } catch (error) {
@@ -237,7 +239,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
 
       } catch (error) {
@@ -289,7 +292,10 @@ export function startBot() {
         message += `*💡 Use /s [token] to get detailed analysis*\n`;
         message += `*📈 Use /c [token] to view price charts*`;
 
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
       } catch (error) {
         console.error('Error fetching token data:', error);
         await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to fetch token data. Please try again later.", { parse_mode: "Markdown" });
@@ -354,7 +360,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
       } catch (error) {
         console.error('Error fetching token details:', error);
@@ -394,7 +401,10 @@ export function startBot() {
         });
 
         // Send the message with Markdown formatting
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
 
       } catch (error) {
         console.error('Failed to send token transfer data:', error);
@@ -432,7 +442,10 @@ export function startBot() {
         });
 
         // Send the message with Markdown formatting
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
 
       } catch (error) {
         console.error('Failed to send token holders time series data:', error);
@@ -496,7 +509,8 @@ export function startBot() {
 
         await ctx.reply(message, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
       } catch (error) {
         console.error('Error fetching whale data:', error);
@@ -534,7 +548,8 @@ export function startBot() {
         await ctx.replyWithPhoto(new InputFile(imagePath), {
           caption: message,
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
 
         // Clean up the temporary file
@@ -550,38 +565,37 @@ export function startBot() {
       const username = ctx.from.username;
       // Use provided mintAddress or get from ctx.match
       const address = walletAddress || ctx.match;
+
       if (!address) {
-        return ctx.reply("⚠️ *NEURAL NETWORK ERROR*\nPlease provide a wallet address to scan", { parse_mode: "Markdown" });
+        return ctx.reply("⚠️ <b>NEURAL NETWORK ERROR</b>\nPlease provide a wallet address to scan", { parse_mode: "HTML" });
       }
+
       console.log(`PnL | username: ${username}, address: ${address}`);
       console.log(`roast | username: ${username}, mint address: ${address}`);
 
       try {
         const roast = await roastWalletPerformance(address);
 
-        // Create cyberpunk-themed message
-        let message = `*🔥 WALLET ROAST ANALYSIS* 🔥\n\n`;
-        message += `*Target:* \`${address}\`\n`;
-        message += `🔗 [View on Solana Explorer](https://explorer.solana.com/address/${address})\n\n`;
-        message += `*💀 Brutal Analysis*\n`;
-        message += `${roast}\n\n`;
-        message += `*⚠️ Disclaimer: This is for entertainment purposes only*\n\n`;
+        let message = `🔥 <b>WALLET ROAST ANALYSIS</b> 🔥\n\n`;
+        message += `Target: <code>${address}</code>\n`;
+        message += `🔗 <a href="https://explorer.solana.com/address/${address}">View on Solana Explorer</a>\n\n`;
+        message += `💀 <b>Brutal Analysis</b>\n`;
+        message += `<tg-spoiler>${roast}</tg-spoiler>\n\n`;
+        message += `💡 <b>Quick Actions</b>`;
 
-        message += `*💡 Quick Actions*\n`;
         const keyboard = new InlineKeyboard()
           .text("💰 Balance", `tb_${address}`)
           .text("🎨 NFTs", `nb_${address}`)
-          .text("📊 PnL", `pnl_${address}`)
+          .text("📊 PnL", `pnl_${address}`);
 
         await ctx.reply(message, {
-          parse_mode: "Markdown",
-          reply_markup: keyboard
+          parse_mode: "HTML",
+          reply_markup: keyboard,
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
-
-
       } catch (error) {
         console.error('Error while roasting:', error);
-        await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to generate roast. Please try again later.", { parse_mode: "Markdown" });
+        await ctx.reply("⚠️ <b>SYSTEM MALFUNCTION</b>\nFailed to generate roast. Please try again later.", { parse_mode: "HTML" });
       }
     },
 
@@ -592,7 +606,10 @@ export function startBot() {
         await ctx.api.sendChatAction(ctx.chat!.id, "typing");
         const marketStatusMessage = await getGlobalMarketStatus();
         // Send the formatted message to the Telegram chat
-        await ctx.reply(marketStatusMessage, { parse_mode: 'Markdown' });
+        await ctx.reply(marketStatusMessage, {
+          parse_mode: 'Markdown',
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
       } catch (error) {
         console.error("Error handling markets command:", error);
         await ctx.reply("Sorry, I couldn't retrieve market status information at this time.");
@@ -668,7 +685,10 @@ export function startBot() {
           }
         });
 
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
       } catch (error) {
         console.error('Error fetching news:', error);
         await ctx.reply("*ERROR*\nCould not retrieve market news. Try again later.", { parse_mode: "Markdown" });
@@ -686,50 +706,58 @@ export function startBot() {
         message += `*  \`${motivate}\` * \n`;
         await ctx.reply(message, {
           parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
         });
-
-
       } catch (error) {
         console.error('Error while motivating:', error);
         await ctx.reply("⚠️ *SYSTEM MALFUNCTION*\nFailed to generate motivate. Please try again later.", { parse_mode: "Markdown" });
       }
-
-
     },
 
     async help(ctx) {
-      const message = `*🌌 VYBGEN COMMAND MATRIX 🌌*\n\n` +
-        `*💰 Wallet Analysis*\n` +
+      const message = `🌌 <b>VYBGEN COMMAND MATRIX </b> 🌌\n\n` +
+        `💰 <b>Wallet Analysis</b>\n` +
+        `<blockquote expandable>` +
         `/tb [address] - Token balance scan\n` +
         `/nb [address] - NFT collection analysis\n` +
         `/pnl [address] - Profit & loss metrics\n` +
-        `/portfolio - Manage your digital assets\n\n` +
+        `/portfolio - Manage your digital assets\n` +
+        `</blockquote>\n\n` +
 
-        `*🔍 Token Research*\n` +
+        `🔍 <b>Token Research</b>\n` +
+        `<blockquote expandable>` +
         `/s [mint] - Token deep dive\n` +
         `/whale [mint] - Top holders analysis\n` +
-        `/c [mint] - Price chart visualization\n\n` +
+        `/c [mint] - Price chart visualization\n` +
+        `</blockquote>\n\n` +
 
-        `*🧩 Program Analysis*\n` +
+        `🧩 <b>Program Analysis</b>\n` +
+        `<blockquote expandable>` +
         `/program - Discover programs\n` +
-        `/program [address] - Program details\n\n` +
+        `/program [address] - Program details\n` +
+        `</blockquote>\n\n` +
 
-        `*💃🏼 Fun, News*\n` +
+        `💃🏼 <b>Fun & News</b>\n` +
+        `<blockquote expandable>` +
         `/roast [address] - Roast addresses\n` +
-        `/markets: View Global Market Status\n` +
+        `/markets - View Global Market Status\n` +
         `/news - Get update on global market and crypto news\n` +
-        `/motivate - Don't give up\n\n` +
+        `/motivate - Don't give up\n` +
+        `</blockquote>\n\n` +
 
-        `*💡 Tips*\n` +
-        `• Use /s to search for tokens\n` +
+        `💡 <b>Tips</b>\n` +
+        `<i>• Use /s to search for tokens\n` +
         `• Use /c to view price charts\n` +
-        `• Use /whale to track big players\n\n` +
+        `• Use /whale to track big players</i>\n\n` +
 
-        `*⚠️ System Status: ONLINE*\n` +
-        `*🔋 Power Level: 100%*\n` +
-        `*🌐 Network: Solana Mainnet*`;
+        `<b>⚠️ System Status: ONLINE</b>\n` +
+        `<b>🔋 Power Level: 100%</b>\n` +
+        `<b>🌐 Network: Solana Mainnet</b>`;
 
-      await ctx.reply(message, { parse_mode: "Markdown" });
+      await ctx.reply(message, {
+        parse_mode: "HTML",
+        reply_parameters: { message_id: ctx.msg.message_id },
+      });
     },
 
     async program(ctx: Context) {
@@ -775,7 +803,10 @@ export function startBot() {
         }
 
         // Send the message with Markdown formatting
-        await ctx.reply(message, { parse_mode: "Markdown" });
+        await ctx.reply(message, {
+          parse_mode: "Markdown",
+          reply_parameters: { message_id: ctx.msg.message_id },
+        });
 
       } catch (error) {
         console.error('Failed to fetch known program accounts:', error);
@@ -836,7 +867,10 @@ export function startBot() {
           }
 
           // Send the message with Markdown formatting
-          await ctx.reply(message, { parse_mode: "Markdown" });
+          await ctx.reply(message, {
+            parse_mode: "Markdown",
+            reply_parameters: { message_id: ctx.msg.message_id },
+          });
         } catch (portfolioError) {
           console.error('Error creating portfolio message:', portfolioError);
           await ctx.reply("⚠️ Failed to create your portfolio report. Please try again later.");
@@ -881,33 +915,47 @@ export function startBot() {
   bot.command("start", async (ctx) => {
     const userName = ctx.from?.first_name || "there";
 
-    await ctx.reply(
-      `*🚀 Welcome to VybGen, ${userName}!*\n\n` +
+    const message = `🚀 Welcome to VybGen, ${userName}!\n\n` +
       `I'm your personal Solana blockchain assistant. Here are the main commands you can use:\n\n` +
-      `*💰 Wallet Commands:*\n` +
-      `/tb [wallet] - Token balances\n` +
-      `/nb [wallet] - NFT collection\n` +
-      `/pnl [wallet] - Profit & loss\n` +
-      `/portfolio - Manage wallets\n\n` +
+      `💰 <b>Wallet Analysis</b>\n` +
+      `<blockquote expandable>` +
+      `/tb [address] - Token balance scan\n` +
+      `/nb [address] - NFT collection analysis\n` +
+      `/pnl [address] - Profit & loss metrics\n` +
+      `/portfolio - Manage your digital assets\n` +
+      `</blockquote>\n\n` +
 
-      `*🔍 Token Research:*\n` +
-      `/s [mintAddress/name] - Search tokens\n` +
-      `/whale [mintAddress] - Top holders\n\n` +
-      `/c [mintAddress] - Generate a Chart\n\n` +
+      `🔍 <b>Token Research</b>\n` +
+      `<blockquote expandable>` +
+      `/s [mint] - Token deep dive\n` +
+      `/whale [mint] - Top holders analysis\n` +
+      `/c [mint] - Price chart visualization\n` +
+      `</blockquote>\n\n` +
 
-
-      `*🧩 Program Analysis:*\n` +
+      `🧩 <b>Program Analysis</b>\n` +
+      `<blockquote expandable>` +
       `/program - Discover programs\n` +
-      `/program [address/name] - Program details\n\n` +
+      `/program [address] - Program details\n` +
+      `</blockquote>\n\n` +
 
-      `*💃 News, Fun and Others:*\n` +
-      `/roast [address] - Roast wallets based on PnL\n` +
-      `/markets: View Global Market Status\n` +
+      `💃🏼 <b>Fun & News</b>\n` +
+      `<blockquote expandable>` +
+      `/roast [address] - Roast addresses\n` +
+      `/markets - View Global Market Status\n` +
       `/news - Get update on global market and crypto news\n` +
-      `/motivate - Don't give up\n\n` +
+      `/motivate - Don't give up\n` +
+      `</blockquote>\n\n` +
 
-      `Type /help for a complete list of commands and examples.`
-    );
+      `💡 <b>Tips</b>\n` +
+      `<i>• Use /s to search for tokens\n` +
+      `• Use /c to view price charts\n` +
+      `• Use /whale to track big players</i>\n\n` +
+
+      `<b>⚠️ System Status: ONLINE</b>\n` +
+      `<b>🔋 Power Level: 100%</b>\n` +
+      `<b>🌐 Network: Solana Mainnet</b>`;
+
+    await ctx.reply(message, { parse_mode: "HTML" });
   });
 
   // Setup callback query handlers for inline buttons
