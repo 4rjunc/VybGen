@@ -5,12 +5,15 @@ import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getToke
 import { roastWalletPerformance } from "./apis/prompt";
 import fs from "fs";
 import { InputFile } from "grammy";
+import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
-//const supabaseUrl = process.env.SUPABASE_URL;
-//const supabaseKey = process.env.SUPABASE_ANON_KEY;
-//const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
+// State to track if the user is expected to send a wallet address
+const awaitingWalletAddress = new Set<number>();
 
 export function startBot() {
   const token = process.env.BOT_API_KEY;
@@ -81,7 +84,7 @@ export function startBot() {
           let tokenEmoji = "🪙";
           if (token.symbol === "SOL") tokenEmoji = "⚡";
           if (token.symbol === "USDC" || token.symbol === "USDT") tokenEmoji = "💵";
-          if (token.valueUsd > 10000) tokenEmoji = "🌕"; // Moon emoji for high value tokens
+          if (parseFloat(token.valueUsd) > 10000) tokenEmoji = "🌕"; // Moon emoji for high value tokens
 
           message += `${tokenEmoji} *${token.symbol}* - $${valueFormatted}\n`;
         });
@@ -134,8 +137,6 @@ export function startBot() {
       getWalletPnL(walletAddress)
         .then(result => console.log(JSON.stringify(result, null, 2)))
         .catch(err => console.error(err));
-
-
     },
 
     async tokens(ctx: Context) {
@@ -148,7 +149,6 @@ export function startBot() {
       getTokensSummary()
         .then(result => console.log(JSON.stringify(result, null, 2)))
         .catch(err => console.error(err));
-
     },
 
     async s(ctx: Context) {
@@ -190,21 +190,13 @@ export function startBot() {
 
         // Add transfer details, limit to first 10 transfers
         transferData.transfers.slice(0, 10).forEach((transfer, index) => {
-          message += `*Transfer ${index + 1}:*
-    `;
-          message += `Signature: ${transfer.signature}
-    `;
-          message += `From: ${transfer.from}
-    `;
-          message += `To: ${transfer.to}
-    `;
-          message += `Amount: ${transfer.amount}
-    `;
-          message += `Value (USD): $${transfer.valueUsd}
-    `;
-          message += `Timestamp: ${transfer.timestamp}
-    
-    `;
+          message += `*Transfer ${index + 1}:*\n`;
+          message += `Signature: ${transfer.signature}\n`;
+          message += `From: ${transfer.from}\n`;
+          message += `To: ${transfer.to}\n`;
+          message += `Amount: ${transfer.amount}\n`;
+          message += `Value (USD): $${transfer.valueUsd}\n`;
+          message += `Timestamp: ${transfer.timestamp}\n\n`;
         });
 
         // Send the message with Markdown formatting
@@ -233,20 +225,16 @@ export function startBot() {
         const timeSeriesData = await getTokenHoldersTimeSeries(mintAddress);
 
         // Create message header
-        let message = `📈 *Token Holders Time Series for ${mintAddress}*
-    
-    `;
+
+        let message = `📈 *Token Holders Time Series for ${mintAddress}*\n\n`;
 
         // Add time series details
         timeSeriesData.slice(0, 10).forEach((entry, index) => {
           const date = new Date(entry.holdersTimestamp * 1000).toISOString().split('T')[0];
-          message += `*Entry ${index + 1}:*
-    `;
-          message += `Date: ${date}
-    `;
-          message += `Holders: ${entry.nHolders}
-    
-    `;
+          message += `*Entry ${index + 1}:*\n`;
+          message += `Date: ${date}\n`;
+          message += `Holders: ${entry.nHolders}\n\n`;
+
         });
 
         // Send the message with Markdown formatting
@@ -257,7 +245,6 @@ export function startBot() {
         await ctx.reply("⚠️ Failed to fetch token holders time series data. Please check the mint address and try again.");
       }
     },
-
 
 
     async whale(ctx: Context) {
@@ -324,13 +311,6 @@ export function startBot() {
       console.log("help");
     },
 
-    async portfolio(ctx) {
-      console.log("portfolio");
-      // Store the tg username with wallet address
-      // When used without wallet address check if username has stored wallets
-      // If no, ask to add, else call /nb /tb /pnl of all addresses
-    },
-
     async program(ctx: Context) {
       console.log("program");
       // Show typing indicator while processing
@@ -341,7 +321,7 @@ export function startBot() {
         const programData = await getKnownProgramAccounts();
 
         // Check if a specific programId is provided
-        const programId = ctx.match ? ctx.match.trim() : null;
+        const programId = typeof ctx.match === 'string' ? ctx.match.trim() : null;
 
         let message = "";
 
@@ -351,18 +331,12 @@ export function startBot() {
 
           if (program) {
             // Display details for the specific program
-            message += `*Program Details:*
-`;
-            message += `Name: ${program.name}
-`;
-            message += `Entity: ${program.entityName}
-`;
-            message += `Labels: ${program.labels.join(", ")}
-`;
-            message += `Description: ${program.programDescription}
-`;
-            message += `Date Added: ${new Date(program.dateAdded).toISOString().split('T')[0]}
-`;
+            message += `*Program Details:*\n`;
+            message += `Name: ${program.name}\n`;
+            message += `Entity: ${program.entityName}\n`;
+            message += `Labels: ${program.labels.join(", ")}\n`;
+            message += `Description: ${program.programDescription}\n`;
+            message += `Date Added: ${new Date(program.dateAdded).toISOString().split('T')[0]}\n`;
           } else {
             message = "⚠️ Program not found. Please check the program ID and try again.";
           }
@@ -385,6 +359,67 @@ export function startBot() {
       } catch (error) {
         console.error('Failed to fetch known program accounts:', error);
         await ctx.reply("⚠️ Failed to fetch known program accounts. Please try again later.");
+      }
+    },
+
+    async portfolio(ctx: Context) {
+      console.log("portfolio");
+      // Show typing indicator while processing
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+
+      const username = ctx.from.username;
+
+      // Fetch user wallets from Supabase
+      const { data: wallets, error } = await supabase
+        .from('user_wallets')
+        .select('wallet_address')
+        .eq('username', username);
+
+      if (error) {
+        console.error('Error fetching wallets:', error);
+        await ctx.reply("⚠️ Failed to fetch your wallets. Please try again later.");
+        return;
+      }
+
+      if (!wallets || wallets.length === 0) {
+        // If no wallets are stored, ask the user to add one
+        await ctx.reply("You have not stored any wallets. Please add a wallet address to your portfolio.", {
+          reply_markup: {
+            inline_keyboard: [[{ text: "Add Wallet", callback_data: "add_wallet" }]]
+          }
+        });
+      } else {
+        try {
+          // If wallets are stored, fetch and display their details
+          let message = `📊 *Portfolio for ${username}*\n\n`;
+
+          for (const { wallet_address } of wallets) {
+            try {
+              message += `*Wallet Address:* \`${wallet_address}\`\n`;
+              
+              // Fetch and display Net Balance
+              const nftData = await getWalletNFTs(wallet_address);
+              message += `Net Balance: $${nftData.summary.totalValueUsd}\n`;
+
+              // Fetch and display Total Balance
+              const tokenData = await getWalletTokens(wallet_address);
+              message += `Total Balance: $${tokenData.totalValueUsd}\n`;
+
+              // Fetch and display Profit and Loss
+              const pnlData = await getWalletPnL(wallet_address);
+              message += `Profit and Loss: $${pnlData.summary.totalPnlUsd}\n\n`;
+            } catch (walletError) {
+              console.error(`Error processing wallet ${wallet_address}:`, walletError);
+              message += `Error fetching data for this wallet\n\n`;
+            }
+          }
+
+          // Send the message with Markdown formatting
+          await ctx.reply(message, { parse_mode: "Markdown" });
+        } catch (portfolioError) {
+          console.error('Error creating portfolio message:', portfolioError);
+          await ctx.reply("⚠️ Failed to create your portfolio report. Please try again later.");
+        }
       }
     }
   };
@@ -458,6 +493,7 @@ export function startBot() {
       }
     );
   });
+
   // Setup callback query handlers for inline buttons
   Object.keys(commandHandlers).forEach(command => {
     // Register callback query handlers
@@ -470,10 +506,64 @@ export function startBot() {
     bot.command(command, (ctx) => commandHandlers[command](ctx));
   });
 
+  // Define this handler ONCE, outside of any command handlers
+  bot.callbackQuery("add_wallet", async (ctx) => {
+    await ctx.answerCallbackQuery(); // Acknowledge the callback
+    await ctx.reply("Please enter your wallet address.");
+    
+    // Add the user to the set of users awaiting a wallet address
+    awaitingWalletAddress.add(ctx.from.id);
+  });
+
+  // Add a handler for the view_portfolio callback
+  bot.callbackQuery("view_portfolio", async (ctx) => {
+    await ctx.answerCallbackQuery(); // Acknowledge the callback
+    // Call the portfolio command handler directly
+    await commandHandlers.portfolio(ctx);
+  });
+
   // Register text handlers for keyboard buttons
   Object.keys(textToCommandMap).forEach(buttonText => {
     const command = textToCommandMap[buttonText];
     bot.hears(buttonText, (ctx) => commandHandlers[command](ctx));
+  });
+
+  // Listen for messages to capture the wallet address
+  bot.on("message:text", async (ctx) => {
+    // Only process if we're waiting for a wallet from this user
+    if (awaitingWalletAddress.has(ctx.from.id)) {
+      const newWalletAddress = ctx.message.text.trim();
+
+      try {
+        console.log('Attempting to insert wallet for user:', ctx.from.username);
+        console.log('Wallet address:', newWalletAddress);
+        // Insert the new wallet address into Supabase
+        const { error } = await supabase
+          .from('user_wallets')
+          .insert([{ 
+            username: ctx.from.username, 
+            wallet_address: newWalletAddress 
+          }]);
+
+        if (error) {
+          console.error('Error adding wallet:', error);
+          await ctx.reply("⚠️ Failed to add your wallet. Please try again later.");
+        } else {
+          await ctx.reply(`Wallet address \`${newWalletAddress}\` added to your portfolio.`, {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [[{ text: "View Portfolio", callback_data: "view_portfolio" }]]
+            }
+          });
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        await ctx.reply("⚠️ An error occurred while saving your wallet. Please try again later.");
+      } finally {
+        // Remove the user from the awaiting set regardless of outcome
+        awaitingWalletAddress.delete(ctx.from.id);
+      }
+    }
   });
 
   // Error handling
