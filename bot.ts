@@ -1,7 +1,7 @@
 import { Bot, GrammyError, HttpError, Context, InputMediaBuilder } from "grammy";
 import { InlineKeyboard, Keyboard } from "grammy";
 import "dotenv/config";
-import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts,  getCryptoMarketNews, SortField, SortDirection, getTopTokens, getGlobalMarketStatus } from "./apis/utils";
+import { getWalletTokens, getWalletNFTs, getTokensSummary, getWalletPnL, getTokenDetails, getTopTokenHolders, getTokenChart, getTokenHoldersTimeSeries, getTokenTransfers, getKnownProgramAccounts, getCryptoMarketNews, SortField, SortDirection, getTopTokens, getGlobalMarketStatus } from "./apis/utils";
 import { generateCryptoMotivation, roastWalletPerformance } from "./apis/prompt";
 import fs from "fs";
 import { InputFile } from "grammy";
@@ -772,6 +772,7 @@ export function startBot() {
         `/s [mint] - Token deep dive\n` +
         `/whale [mint] - Top holders analysis\n` +
         `/c [mint] - Price chart visualization\n` +
+        `/lb - Get token leaderboard\n` +
         `</blockquote>\n\n` +
 
         `🧩 <b>Program Analysis</b>\n` +
@@ -945,9 +946,9 @@ export function startBot() {
     async handleFieldSelection(ctx: Context) {
       const callbackQuery = ctx.callbackQuery;
       if (!callbackQuery || typeof callbackQuery.data !== 'string') return;
-      
+
       const field = callbackQuery.data.replace('sort_field_', '') as SortField;
-      
+
       await ctx.editMessageText(`Sort ${field} in ascending or descending order?`, {
         reply_markup: {
           inline_keyboard: [
@@ -963,11 +964,11 @@ export function startBot() {
     async handleDirectionSelection(ctx: Context) {
       const callbackQuery = ctx.callbackQuery;
       if (!callbackQuery || typeof callbackQuery.data !== 'string') return;
-      
+
       const parts = callbackQuery.data.replace('sort_dir_', '').split('_');
       const field = parts[0] as SortField;
       const direction = parts[1] as SortDirection;
-      
+
       await ctx.editMessageText(`Fetching tokens sorted by ${field} in ${direction === 'asc' ? 'ascending' : 'descending'} order...`);
       await this.displayTokens(ctx, field, direction);
     },
@@ -979,29 +980,29 @@ export function startBot() {
     ) {
       console.log('🔍 Starting displayTokens with params:', { sortBy, sortDirection });
       await ctx.api.sendChatAction(ctx.chat!.id, "typing");
-      
+
       try {
-        console.log('📤 Fetching tokens from API...');
+        //console.log('📤 Fetching tokens from API...');
         const tokens = await getTopTokens(sortBy, sortDirection);
-        console.log(`✅ Successfully fetched ${tokens.length} tokens`);
-        
+        //console.log(`✅ Successfully fetched ${tokens.length} tokens`);
+
         let message = `*🏆 Top Tokens - Sorted by ${sortBy} (${sortDirection === 'asc' ? '↑' : '↓'})*\n\n`;
-        
+
         console.log('📝 Formatting message...');
         tokens.slice(0, 10).forEach((token, index) => {
           console.log(`🔍 Processing token ${index + 1}:`, token.symbol);
           const formattedPrice = token.price < 1 ? token.price.toFixed(6) : token.price.toFixed(2);
-          
+
           message += `*${index + 1}. ${token.name} (${token.symbol.toUpperCase()})*\n`;
           message += `💰 Market Cap: $${Math.round(token.marketCap).toLocaleString()}\n`;
           message += `📈 Price: $${formattedPrice}\n`;
           message += `📊 Supply: ${Math.round(token.currentSupply).toLocaleString()}\n`;
           message += `🔑 ${token.mintAddress.substring(0, 8)}...${token.mintAddress.substring(token.mintAddress.length - 4)}\n\n`;
         });
-        
-        console.log('📤 Sending message to user...');
+
+        //console.log('📤 Sending message to user...');
         await ctx.reply(message, { parse_mode: "Markdown" });
-        console.log('✅ Message sent successfully');
+        //console.log('✅ Message sent successfully');
       } catch (error) {
         console.error('❌ Error in displayTokens:', {
           message: error.message,
@@ -1069,6 +1070,7 @@ export function startBot() {
       `/s [mint] - Token deep dive\n` +
       `/whale [mint] - Top holders analysis\n` +
       `/c [mint] - Price chart visualization\n` +
+      `/lb - Get token leaderboard\n` +
       `</blockquote>\n\n` +
 
       `🧩 <b>Program Analysis</b>\n` +
