@@ -42,15 +42,12 @@ Your AI-powered Solana trading companion, providing real-time market insights, w
 - **Network:** Solana Mainnet
 
 ## 🎥 Demo
-[Demo Video](path/to/demo/video.mp4)
+[Demo Video](https://youtu.be/t0d0KSxGmMg)
 
-## 📸 Screenshots
-![Vybgen Interface](path/to/screenshot.png)
 
 ## 🔗 Links
 - [Telegram Bot](https://t.me/vybgen_bot)
-- [Documentation](path/to/docs)
-- [GitHub Repository](https://github.com/yourusername/vybgen)
+- [Documentation](https://vybgen.gitbook.io/vybegen)
 
 ## 🤝 Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
