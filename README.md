@@ -16,12 +16,7 @@ Your AI-powered Solana trading companion, providing real-time market insights, w
 - **Token Deep Dive** (`/s [mint]`) - Comprehensive token analysis and metrics
 - **Whale Watch** (`/whale [mint]`) - Monitor top token holders
 - **Price Charts** (`/c [mint]`) - Visualize token price movements
-- **Token Transfers** (`/tt [mint]`) - Track recent token transfers
-- **Holders Time Series** (`/ths [mint]`) - Analyze holder trends
-
-### 🧩 Program Analysis
-- **Program Discovery** (`/program`) - Explore known programs
-- **Program Details** (`/program [address]`) - Get detailed program information
+- **Token Leaderboard**(`/lb`) - Get Leaderboard of tokens
 
 ### 📰 Market Intelligence
 - **Market News** (`/markets`) - Stay updated with global market news
@@ -30,6 +25,9 @@ Your AI-powered Solana trading companion, providing real-time market insights, w
 ### 💃 Fun & Entertainment
 - **Wallet Roast** (`/roast [address]`) - Get a humorous analysis of wallet performance
 - **Motivation** (`/motivate`) - Get trading motivation when needed
+- **Markets** (`/markets`) - Get global market status
+- **News** (`/news`) - Get global and crypto news 
+
 
 ## 🛠️ Quick Actions
 - Use `/s` to search for tokens

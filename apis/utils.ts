@@ -865,55 +865,52 @@ export type SortDirection = 'asc' | 'desc';
  * Fetches tokens from the VYBE API with sorting options
  */
 export async function getTopTokens(
-  sortBy: SortField = 'marketCap', 
+  sortBy: SortField = 'marketCap',
   sortDirection: SortDirection = 'desc',
   limit: number = 10
 ): Promise<Token[]> {
   try {
-    console.log('🔍 Starting getTopTokens with params:', { sortBy, sortDirection, limit });
-    
-    // Authenticate with the API
-    vybeApi.auth(vybe_token);
-    console.log('✅ API authentication successful');
-    
+    // console.log('🔍 Starting getTopTokens with params:', { sortBy, sortDirection, limit });
+
+
     // Prepare parameters object
     const params: Record<string, string> = {
       limit: String(limit)
     };
-    
+
     // Add sorting parameter
     if (sortDirection === 'asc') {
       params.sortByAsc = sortBy;
     } else {
       params.sortByDesc = sortBy;
     }
-    
-    console.log('📤 Making API request with params:', params);
-    
+
+    //console.log('📤 Making API request with params:', params);
+
     // Make API request
     const response = await vybeApi.get_tokens_summary(params);
-    console.log('📥 Received API response:', JSON.stringify(response, null, 2));
-    
+    //console.log('📥 Received API response:', JSON.stringify(response, null, 2));
+
     if (!response) {
       console.error('❌ No response received from API');
       throw new Error('No response received from API');
     }
-    
+
     if (!response.data || !response.data.data) {
       console.error('❌ No data in API response');
       throw new Error('No data in API response');
     }
-    
+
     if (!Array.isArray(response.data.data)) {
       console.error('❌ Invalid data structure:', typeof response.data.data);
       throw new Error('Invalid API response structure');
     }
-    
-    console.log(`✅ Successfully received ${response.data.data.length} tokens`);
+
+    //console.log(`✅ Successfully received ${response.data.data.length} tokens`);
 
     // Map API response to Token interface
     const tokens: Token[] = response.data.data.map(token => {
-      console.log('🔍 Processing token:', token.symbol);
+      //console.log('🔍 Processing token:', token.symbol);
       return {
         name: token.name || 'Unknown',
         symbol: token.symbol || 'UNKNOWN',
@@ -924,7 +921,7 @@ export async function getTopTokens(
       };
     });
 
-    console.log('✅ Successfully processed tokens');
+    //console.log('✅ Successfully processed tokens');
     return tokens;
   } catch (error) {
     console.error('❌ Error in getTopTokens:', {
